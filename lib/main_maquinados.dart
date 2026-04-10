@@ -6,7 +6,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const ScadaApp());
+//void main() => runApp(const ScadaMaquinadosScreen());
 
 // ── Paleta ────────────────────────────────────────────────
 const Color kBg      = Color(0xFF081014);
@@ -21,18 +21,13 @@ const Color kDark    = Color(0xFF0C1820);
 const Color kMachine = Color(0xFF00FF88); // verde para maquinados
 
 // ── App ───────────────────────────────────────────────────
-class ScadaApp extends StatelessWidget {
-  const ScadaApp({super.key});
+class ScadaMaquinadosScreen extends StatelessWidget {
+  const ScadaMaquinadosScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Centro de Maquinados SCADA 4.0',
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: kBg,
-          colorScheme: const ColorScheme.dark(primary: kCyan),
-        ),
-        home: const ScadaDashboard(),
-      );
+  Widget build(BuildContext context) {
+    return ScadaDashboard();
+  }
 }
 
 // ── Modelos ───────────────────────────────────────────────

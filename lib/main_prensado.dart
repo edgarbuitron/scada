@@ -4,10 +4,10 @@
 //  4 Estados · 4 Sensores · 4 Actuadores (RLY01-RLY04)
 // ============================================================
 import 'dart:async';
-import 'dart:math';
+//import 'dart:math';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const ScadaApp());
+void main() => runApp(const ScadaPrensadoScreen());
 
 // ── Paleta ────────────────────────────────────────────────
 const Color kBg     = Color(0xFF081014);
@@ -22,8 +22,8 @@ const Color kDark   = Color(0xFF0C1820);
 const Color kMachine = Color(0xFFFFAA00); // naranja para prensado
 
 // ── App ───────────────────────────────────────────────────
-class ScadaApp extends StatelessWidget {
-  const ScadaApp({super.key});
+class ScadaPrensadoScreen extends StatelessWidget {
+  const ScadaPrensadoScreen({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -123,7 +123,7 @@ class _ScadaDashboardState extends State<ScadaDashboard> {
   SensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
   ActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
   bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
-  String get _roleLabel => _role == 'Ingeniero' ? 'Ingeniero (Control Total)' : 'Operador';
+  //String get _roleLabel => _role == 'Ingeniero' ? 'Ingeniero (Control Total)' : 'Operador';
 
   @override
   void initState() {

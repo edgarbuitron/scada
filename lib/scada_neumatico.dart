@@ -6,36 +6,33 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-// ── Paleta Unificada ──
-const Color kBg      = Color(0xFF0F172A);
-const Color kPanel   = Color(0xFF1E293B);
-const Color kCyan    = Color(0xFF38BDF8);
-const Color kGreen   = Color(0xFF10B981);
-const Color kRed     = Color(0xFFF43F5E);
-const Color kBorder  = Color(0xFF334155);
-const Color kText    = Color(0xFFF8FAFC);
-const Color kAudit   = Color(0xFFF59E0B);
-const Color kDark    = Color(0xFF0C1820); // Mantenido por si tus dibujos lo usan
+void main() => runApp(const ScadaApp());
 
-// ── Modelos ───────────────────────────────────────────────
-enum LogType { info, warning, error }
+// ── Paleta ────────────────────────────────────────────────
+const Color kBg     = Color(0xFF081014);
+const Color kPanel  = Color(0xFF11222C);
+const Color kCyan   = Color(0xFF00EAFF);
+const Color kGreen  = Color(0xFF00FF88);
+const Color kRed    = Color(0xFFFF3366);
+const Color kBorder = Color(0xFF1A3644);
+const Color kText   = Color(0xFFC5D1D8);
+const Color kAudit  = Color(0xFFFFAA00);
+const Color kDark   = Color(0xFF0C1820);
 
-class LogEntry {
-  final DateTime time;
-  final String msg;
-  final LogType type;
-  LogEntry(this.msg, {this.type = LogType.info}) : time = DateTime.now();
-}
-
-// ── Pantalla de la Maqueta ──────────────────────────────────
-class MaquetaNeumaticaScreen extends StatefulWidget {
-  const MaquetaNeumaticaScreen({super.key});
+// ── App ───────────────────────────────────────────────────
+class ScadaApp extends StatelessWidget {
+  const ScadaApp({super.key});
   @override
-  State<MaquetaNeumaticaScreen> createState() => _MaquetaNeumaticaScreenState();
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'SCADA 4.0',
+        theme: ThemeData.dark().copyWith(
+          scaffoldBackgroundColor: kBg,
+          colorScheme: const ColorScheme.dark(primary: kCyan),
+        ),
+        home: const ScadaNeumaticoScreen(),
+      );
 }
-
-class _MaquetaNeumaticaScreenState extends State<MaquetaNeumaticaScreen> {
-
 
 // ── Modelos ───────────────────────────────────────────────
 enum LogType { info, audit, error }
@@ -65,13 +62,13 @@ class ActuatorModel {
 }
 
 // ── Dashboard ─────────────────────────────────────────────
-class ScadaDashboard extends StatefulWidget {
-  const ScadaDashboard({super.key});
+class ScadaNeumaticoScreen extends StatefulWidget {
+  const ScadaNeumaticoScreen({super.key});
   @override
-  State<ScadaDashboard> createState() => _ScadaDashboardState();
+  State<ScadaNeumaticoScreen> createState() => _ScadaNeumaticoScreenState();
 }
 
-class _ScadaDashboardState extends State<ScadaDashboard> {
+class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
   String _clock = '';
   late Timer _clockTimer;
 
@@ -637,6 +634,11 @@ class _ScadaDashboardState extends State<ScadaDashboard> {
         ),
       );
 }
+
+
+
+
+
 
 // ── Chart Painter ──────────────────────────────────────────
 class _ChartPainter extends CustomPainter {

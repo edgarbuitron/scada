@@ -8,7 +8,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const ScadaApp());
+//void main() => runApp(const ScadaApp());
 
 // ── Paleta ────────────────────────────────────────────────
 const Color kBg      = Color(0xFF081014);
@@ -23,19 +23,34 @@ const Color kDark    = Color(0xFF0C1820);
 const Color kMachine = Color(0xFFFF3366); // rojo para robot
 
 // ── App ───────────────────────────────────────────────────
-class ScadaApp extends StatelessWidget {
-  const ScadaApp({super.key});
+class ScadaRobot3EjesScreen extends StatelessWidget {
+  const ScadaRobot3EjesScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Robot 3 Ejes SCADA 4.0',
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: kBg,
-          colorScheme: const ColorScheme.dark(primary: kCyan),
-        ),
-        home: const ScadaDashboard(),
-      );
+  Widget build(BuildContext context) {
+    return const ScadaRobot3EjesScreen();
+      //child: Text(
+        //"Pantalla SCADA Robot 3 Ejes",
+        //style: TextStyle(color: Colors.white, fontSize: 22),
+      
+    
+  }
 }
+
+// ── App ───────────────────────────────────────────────────
+//class ScadaApp extends StatelessWidget {
+  //const ScadaApp({super.key});
+  //@override
+  //Widget build(BuildContext context) => MaterialApp(
+        //debugShowCheckedModeBanner: false,
+        //title: 'Robot 3 Ejes SCADA 4.0',
+        //theme: ThemeData.dark().copyWith(
+          //scaffoldBackgroundColor: kBg,
+          //colorScheme: const ColorScheme.dark(primary: kCyan),
+        //),
+        //home: const ScadaDashboard(),
+      //);
+//}
 
 // ── Modelos ───────────────────────────────────────────────
 enum LogType { info, audit, error, success }
@@ -87,13 +102,13 @@ const List<String> kEstados = [
 ];
 
 // ── Dashboard ─────────────────────────────────────────────
-class ScadaDashboard extends StatefulWidget {
-  const ScadaDashboard({super.key});
+class ScadaRobotDashboard extends StatefulWidget {
+  const ScadaRobotDashboard({super.key});
   @override
-  State<ScadaDashboard> createState() => _ScadaDashboardState();
+  State<ScadaRobotDashboard> createState() => _ScadaDashboardState();
 }
 
-class _ScadaDashboardState extends State<ScadaDashboard>
+class _ScadaDashboardState extends State<ScadaRobotDashboard>
     with SingleTickerProviderStateMixin {
   String _clock = '';
   late Timer _clockTimer;
