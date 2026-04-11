@@ -28,7 +28,7 @@ class ScadaRobot3EjesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ScadaRobot3EjesScreen();
+    return const ScadaRobotDashboard();
       //child: Text(
         //"Pantalla SCADA Robot 3 Ejes",
         //style: TextStyle(color: Colors.white, fontSize: 22),

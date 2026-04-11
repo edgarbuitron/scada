@@ -1,108 +1,92 @@
 // ============================================================
-//  CENTRO NEUMÁTICO SCADA 4.0  –  Flutter
-//  Fiel al HTML original (index.html)
+// CENTRO NEUMÁTICO SCADA 4.0 -- Flutter
+// Exporta: ScadaNeumaticoBoard  (usado por main.dart)
 // ============================================================
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const ScadaApp());
-
-// ── Paleta ────────────────────────────────────────────────
+// ── Paleta propia (nombres distintos a main.dart para evitar conflictos) ──
 const Color kBg     = Color(0xFF081014);
 const Color kPanel  = Color(0xFF11222C);
-const Color kCyan   = Color(0xFF00EAFF);
-const Color kGreen  = Color(0xFF00FF88);
-const Color kRed    = Color(0xFFFF3366);
-const Color kBorder = Color(0xFF1A3644);
+const Color kCyanN  = Color(0xFF00EAFF);
+const Color kGreenN = Color(0xFF00FF88);
+const Color kRedN   = Color(0xFFFF3366);
+const Color kBorderN= Color(0xFF1A3644);
 const Color kText   = Color(0xFFC5D1D8);
 const Color kAudit  = Color(0xFFFFAA00);
 const Color kDark   = Color(0xFF0C1820);
 
-// ── App ───────────────────────────────────────────────────
-class ScadaApp extends StatelessWidget {
-  const ScadaApp({super.key});
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'SCADA 4.0',
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: kBg,
-          colorScheme: const ColorScheme.dark(primary: kCyan),
-        ),
-        home: const ScadaNeumaticoScreen(),
-      );
-}
+// ── Modelos internos (privados a este archivo) ────────────────────────────
+enum _NLogType { info, audit, error }
 
-// ── Modelos ───────────────────────────────────────────────
-enum LogType { info, audit, error }
-
-class LogEntry {
+class _NLogEntry {
   final String time, role, message;
-  final LogType type;
-  const LogEntry(this.time, this.role, this.message, this.type);
-  Color get color => type == LogType.error
-      ? kRed
-      : type == LogType.audit
+  final _NLogType type;
+  const _NLogEntry(this.time, this.role, this.message, this.type);
+  Color get color => type == _NLogType.error
+      ? kRedN
+      : type == _NLogType.audit
           ? kAudit
           : kText;
 }
 
-class SensorModel {
+class _SensorModel {
   final String id, label;
   bool active;
-  SensorModel(this.id, this.label, {this.active = false});
+  _SensorModel(this.id, this.label, {this.active = false});
 }
 
-class ActuatorModel {
+class _ActuatorModel {
   final String id, label;
   bool on;
   bool disabled;
-  ActuatorModel(this.id, this.label, {this.on = false, this.disabled = false});
+  _ActuatorModel(this.id, this.label, {this.on = false, this.disabled = false});
 }
 
-// ── Dashboard ─────────────────────────────────────────────
-class ScadaNeumaticoScreen extends StatefulWidget {
-  const ScadaNeumaticoScreen({super.key});
+// ── Widget público exportado ──────────────────────────────────────────────
+class ScadaNeumaticoBoard extends StatefulWidget {
+  const ScadaNeumaticoBoard({super.key});
+
   @override
-  State<ScadaNeumaticoScreen> createState() => _ScadaNeumaticoScreenState();
+  State<ScadaNeumaticoBoard> createState() => _ScadaNeumaticoScreenState();
 }
 
-class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
+class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   String _clock = '';
   late Timer _clockTimer;
-
   String _role = 'Ingeniero';
   String _mode = 'manual';
   String _conn = 'sim';
-
-  bool _isCycleRunning = false;
+  bool   _isCycleRunning = false;
   double _pressure = 1.0;
-  int _piezas = 0;
+  int    _piezas   = 0;
+
   final List<double> _chartData = List.filled(40, 1.0);
 
-  final List<SensorModel> _sensors = [
-    SensorModel('P1', 'P1: Input Storage (Pieza)'),
-    SensorModel('P2', 'P2: Conveyor Final (Llegada)'),
-    SensorModel('S1', 'S1: Punching Machine (Pos.)'),
-    SensorModel('S3', 'S3: Turntable Load'),
-    SensorModel('S2', 'S2: PARO EMERGENCIA'),
+  final List<_SensorModel> _sensors = [
+    _SensorModel('P1', 'P1: Input Storage (Pieza)'),
+    _SensorModel('P2', 'P2: Conveyor Final (Llegada)'),
+    _SensorModel('S1', 'S1: Punching Machine (Pos.)'),
+    _SensorModel('S3', 'S3: Turntable Load'),
+    _SensorModel('S2', 'S2: PARO EMERGENCIA'),
   ];
 
-  final List<ActuatorModel> _actuators = [
-    ActuatorModel('M1', 'M1: Compresor Neumático'),
-    ActuatorModel('M2', 'M2: Mesa Giratoria'),
-    ActuatorModel('M3', 'M3: Banda Transportadora'),
-    ActuatorModel('V1', 'V1: Pistón Entrada'),
-    ActuatorModel('V3', 'V3: Perforadora'),
-    ActuatorModel('V4', 'V4: Expulsión'),
+  final List<_ActuatorModel> _actuators = [
+    _ActuatorModel('M1', 'M1: Compresor Neumático'),
+    _ActuatorModel('M2', 'M2: Mesa Giratoria'),
+    _ActuatorModel('M3', 'M3: Banda Transportadora'),
+    _ActuatorModel('V1', 'V1: Pistón Entrada'),
+    _ActuatorModel('V3', 'V3: Perforadora'),
+    _ActuatorModel('V4', 'V4: Expulsión'),
   ];
 
-  final List<LogEntry> _logs = [];
+  final List<_NLogEntry> _logs = [];
   final ScrollController _logScroll = ScrollController();
 
-  SensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
-  ActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
+  _SensorModel   _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
+  _ActuatorModel _act   (String id) => _actuators.firstWhere((a) => a.id == id);
   bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
 
   @override
@@ -115,13 +99,12 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         _simulatePressure();
       });
     });
-    _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
+    _logAudit('Configuración cambiada a Modo: $_mode', _NLogType.audit);
   }
 
   void _updateClock() {
     final n = DateTime.now();
-    _clock =
-        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
+    _clock = '${n.hour.toString().padLeft(2,'0')}:${n.minute.toString().padLeft(2,'0')}:${n.second.toString().padLeft(2,'0')}';
   }
 
   void _simulatePressure() {
@@ -143,11 +126,10 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
     super.dispose();
   }
 
-  void _logAudit(String message, LogType type) {
-    final n = DateTime.now();
-    final time =
-        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-    setState(() => _logs.add(LogEntry(time, _role, message, type)));
+  void _logAudit(String message, _NLogType type) {
+    final n    = DateTime.now();
+    final time = '${n.hour.toString().padLeft(2,'0')}:${n.minute.toString().padLeft(2,'0')}:${n.second.toString().padLeft(2,'0')}';
+    setState(() => _logs.add(_NLogEntry(time, _role, message, type)));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScroll.hasClients) {
         _logScroll.animateTo(_logScroll.position.maxScrollExtent,
@@ -160,7 +142,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
     for (final a in _actuators) {
       a.disabled = (_role == 'Operador' || _mode == 'auto' || _isCycleRunning);
     }
-    _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
+    _logAudit('Configuración cambiada a Modo: $_mode', _NLogType.audit);
   }
 
   void _toggleSensor(String id) {
@@ -175,93 +157,81 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
     setState(() => s.active = !s.active);
     _logAudit(
         'Simulación Manual: Sensor $id forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}',
-        LogType.audit);
+        _NLogType.audit);
   }
 
   void _toggleActuator(String id, bool val) {
     setState(() => _act(id).on = val);
     if (!_isCycleRunning) {
-      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', LogType.audit);
+      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
     }
   }
 
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
     if (_pressure < 2.5) {
-      _logAudit('Falla de arranque: Presión neumática insuficiente.', LogType.error);
+      _logAudit('Falla de arranque: Presión neumática insuficiente.', _NLogType.error);
       return;
     }
-    setState(() {
-      _isCycleRunning = true;
-      _updatePermissions();
-    });
-    _logAudit('INICIANDO PRODUCCIÓN AUTOMÁTICA...', LogType.info);
-
+    setState(() { _isCycleRunning = true; _updatePermissions(); });
+    _logAudit('INICIANDO PRODUCCIÓN AUTOMÁTICA...', _NLogType.info);
     try {
       _toggleActuator('V1', true);
       setState(() => _sensor('P1').active = false);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('V1', false);
-
       _toggleActuator('M3', true);
       await Future.delayed(const Duration(milliseconds: 1500));
       setState(() => _sensor('P2').active = true);
       _toggleActuator('M3', false);
-
       _toggleActuator('M2', true);
       await Future.delayed(const Duration(seconds: 1));
       setState(() => _sensor('S1').active = true);
       _toggleActuator('M2', false);
-
       _toggleActuator('V3', true);
       await Future.delayed(const Duration(milliseconds: 1500));
       _toggleActuator('V3', false);
-
       _toggleActuator('V4', true);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('V4', false);
-
       setState(() {
         _sensor('P2').active = false;
         _sensor('S1').active = false;
         _sensor('P1').active = true;
         _piezas++;
       });
-      _logAudit('CICLO EXITOSO. Pieza terminada y contabilizada.', LogType.info);
+      _logAudit('CICLO EXITOSO. Pieza terminada y contabilizada.', _NLogType.info);
     } catch (_) {
-      _logAudit('Error en la secuencia automática.', LogType.error);
+      _logAudit('Error en la secuencia automática.', _NLogType.error);
     }
-
-    setState(() {
-      _isCycleRunning = false;
-      _updatePermissions();
-    });
+    setState(() { _isCycleRunning = false; _updatePermissions(); });
   }
 
   void _triggerEmergency() {
     for (final a in _actuators) {
       setState(() => a.on = false);
     }
-    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...', LogType.error);
+    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...', _NLogType.error);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: kPanel,
         title: const Text('📲 NOTIFICACIÓN PUSH AL SUPERVISOR',
-            style: TextStyle(color: kRed, fontSize: 14)),
+            style: TextStyle(color: kRedN, fontSize: 14)),
         content: const Text(
             'Alerta Crítica: Paro de Emergencia presionado en Línea 1.',
             style: TextStyle(color: kText)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: kCyan)))
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: kCyanN)),
+          )
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -296,20 +266,18 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
     );
   }
 
-  // ── Header ─────────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
         decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: kCyan, width: 2))),
+            border: Border(bottom: BorderSide(color: kCyanN, width: 2))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('CENTRO NEUMÁTICO SCADA 4.0',
                 style: TextStyle(
-                    color: kCyan,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.4)),
+                    color: kCyanN, fontSize: 20,
+                    fontWeight: FontWeight.bold, letterSpacing: 1.4)),
             Text(_clock,
                 style: const TextStyle(
                     color: kText, fontSize: 14, fontFamily: 'monospace')),
@@ -317,46 +285,44 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         ),
       );
 
-  // ── Top bar ────────────────────────────────────────────
+  // ── Top bar ───────────────────────────────────────────────────────────────
   Widget _buildTopBar() => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: kPanel,
-          border: Border.all(color: kBorder),
+          border: Border.all(color: kBorderN),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Wrap(
-          spacing: 16,
-          runSpacing: 10,
+          spacing: 16, runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _labeledSelect('Rol:', _role, {
               'Ingeniero': 'Ingeniero (Control Total)',
-              'Operador': 'Operador (Auto/Lectura)',
+              'Operador':  'Operador (Auto/Lectura)',
             }, (v) { setState(() => _role = v!); _updatePermissions(); }),
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
-              'auto': 'Automático',
+              'auto':   'Automático',
             }, (v) { setState(() => _mode = v!); _updatePermissions(); }),
             _labeledSelect('Conexión:', _conn, {
               'sim': 'Simulación Local',
-              'ws': 'Hardware Real (WebSocket)',
+              'ws':  'Hardware Real (WebSocket)',
             }, (v) { setState(() => _conn = v!); }),
             ElevatedButton(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen,
+                backgroundColor:         kGreenN,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                foregroundColor: Colors.black,
+                foregroundColor:         Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               child: const Text('Iniciar Ciclo Automático'),
             ),
             ElevatedButton(
-              onPressed: () =>
-                  _logAudit('Auditoría exportada por el usuario.', LogType.audit),
+              onPressed: () => _logAudit('Auditoría exportada por el usuario.', _NLogType.audit),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kAudit,
                 foregroundColor: Colors.black,
@@ -366,7 +332,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
               child: const Text('Exportar Auditoría CSV'),
             ),
             _kpiBox('Piezas Terminadas', '$_piezas'),
-            _kpiBox('Eficiencia (OEE)', '100%'),
+            _kpiBox('Eficiencia (OEE)',  '100%'),
           ],
         ),
       );
@@ -380,15 +346,15 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: kBg,
-            border: Border.all(color: kCyan),
+            border: Border.all(color: kCyanN),
             borderRadius: BorderRadius.circular(4),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: val,
               dropdownColor: kPanel,
-              style: const TextStyle(color: kCyan, fontSize: 12),
-              icon: const Icon(Icons.arrow_drop_down, color: kCyan, size: 18),
+              style: const TextStyle(color: kCyanN, fontSize: 12),
+              icon: const Icon(Icons.arrow_drop_down, color: kCyanN, size: 18),
               isDense: true,
               items: items.entries
                   .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -402,8 +368,8 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
   Widget _kpiBox(String label, String value) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: kGreen.withOpacity(0.1),
-          border: Border.all(color: kGreen),
+          color: kGreenN.withOpacity(0.1),
+          border: Border.all(color: kGreenN),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -411,11 +377,11 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
           const SizedBox(height: 2),
           Text(value,
               style: const TextStyle(
-                  color: kGreen, fontSize: 24, fontWeight: FontWeight.bold)),
+                  color: kGreenN, fontSize: 24, fontWeight: FontWeight.bold)),
         ]),
       );
 
-  // ── Row 1: Digital Twin + Sensores ─────────────────────
+  // ── Row 1: Digital Twin + Sensores ────────────────────────────────────────
   Widget _buildRow1() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -429,33 +395,26 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         height: 300,
         decoration: BoxDecoration(
           color: kDark,
-          border: Border.all(color: kCyan),
+          border: Border.all(color: kCyanN),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Stack(children: [
           const Positioned(
-            top: 10,
-            right: 10,
+            top: 10, right: 10,
             child: Text('Gemelo Digital 2D',
-                style: TextStyle(color: kCyan, fontWeight: FontWeight.bold, fontSize: 13)),
+                style: TextStyle(
+                    color: kCyanN, fontWeight: FontWeight.bold, fontSize: 13)),
           ),
-          Positioned(top: 20, left: 20,
-              child: _dtPart('M1', 'Compresor\n(M1)', w: 80, h: 80, circle: true)),
-          Positioned(top: 100, left: 150,
-              child: _dtPart('V1', 'V1', w: 40, h: 40)),
-          Positioned(top: 150, left: 150,
-              child: _dtPart('M3', 'Banda Transportadora (M3)', w: 200, h: 40)),
-          Positioned(top: 60, right: 80,
-              child: _dtPart('V3', 'V3', w: 40, h: 40)),
-          Positioned(top: 120, right: 50,
-              child: _dtPart('M2', 'Mesa\n(M2)', w: 100, h: 100, circle: true)),
-          Positioned(top: 230, right: 80,
-              child: _dtPart('V4', 'V4', w: 40, h: 40)),
+          Positioned(top: 20,  left: 20,  child: _dtPart('M1', 'Compresor\n(M1)',              w: 80,  h: 80,  circle: true)),
+          Positioned(top: 100, left: 150, child: _dtPart('V1', 'V1',                            w: 40,  h: 40)),
+          Positioned(top: 150, left: 150, child: _dtPart('M3', 'Banda Transportadora (M3)',     w: 200, h: 40)),
+          Positioned(top: 60,  right: 80, child: _dtPart('V3', 'V3',                            w: 40,  h: 40)),
+          Positioned(top: 120, right: 50, child: _dtPart('M2', 'Mesa\n(M2)',                    w: 100, h: 100, circle: true)),
+          Positioned(top: 230, right: 80, child: _dtPart('V4', 'V4',                            w: 40,  h: 40)),
         ]),
       );
 
-  Widget _dtPart(String id, String label,
-      {required double w, required double h, bool circle = false}) {
+  Widget _dtPart(String id, String label, {required double w, required double h, bool circle = false}) {
     bool active = false;
     try { active = _actuators.firstWhere((a) => a.id == id).on; } catch (_) {}
     return AnimatedContainer(
@@ -463,12 +422,12 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
       width: w, height: h,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: active ? kGreen : const Color(0xFF333333),
+        color: active ? kGreenN : const Color(0xFF333333),
         border: Border.all(
             color: active ? Colors.white : const Color(0xFF555555), width: 2),
         borderRadius: BorderRadius.circular(circle ? h / 2 : 4),
         boxShadow: active
-            ? [BoxShadow(color: kGreen.withOpacity(0.6), blurRadius: 15)]
+            ? [BoxShadow(color: kGreenN.withOpacity(0.6), blurRadius: 15)]
             : null,
       ),
       child: Text(label,
@@ -488,12 +447,12 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         ),
       );
 
-  Widget _sensorRow(SensorModel s) {
+  Widget _sensorRow(_SensorModel s) {
     final bool isEmergency = s.id == 'S2';
-    final Color ledColor = isEmergency && s.active
-        ? kRed
+    final Color ledColor   = isEmergency && s.active
+        ? kRedN
         : (!isEmergency && s.active)
-            ? kGreen
+            ? kGreenN
             : const Color(0xFF333333);
     return GestureDetector(
       onTap: () => isEmergency ? _triggerEmergency() : _toggleSensor(s.id),
@@ -523,7 +482,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
     );
   }
 
-  // ── Row 2: Actuadores + Audit ──────────────────────────
+  // ── Row 2: Actuadores + Audit ─────────────────────────────────────────────
   Widget _buildRow2() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -545,7 +504,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         ),
       );
 
-  Widget _actuatorRow(ActuatorModel a) => Container(
+  Widget _actuatorRow(_ActuatorModel a) => Container(
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         decoration: BoxDecoration(
@@ -559,8 +518,8 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
             child: Switch(
               value: a.on,
               onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
-              activeColor: Colors.white,
-              activeTrackColor: kCyan,
+              activeColor:        Colors.white,
+              activeTrackColor:   kCyanN,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: const Color(0xFF333333),
             ),
@@ -574,7 +533,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
           height: 180,
           decoration: BoxDecoration(
             color: kBg,
-            border: Border.all(color: kBorder),
+            border: Border.all(color: kBorderN),
             borderRadius: BorderRadius.circular(4),
           ),
           padding: const EdgeInsets.all(10),
@@ -589,9 +548,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
                   color: l.color,
                   fontSize: 11,
                   fontFamily: 'monospace',
-                  fontWeight: l.type == LogType.audit
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                  fontWeight: l.type == _NLogType.audit ? FontWeight.bold : FontWeight.normal,
                 ),
               );
             },
@@ -599,7 +556,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         ),
       );
 
-  // ── Chart ──────────────────────────────────────────────
+  // ── Chart ──────────────────────────────────────────────────────────────────
   Widget _buildChartPanel() => _panel(
         title: 'Presión Neumática (Voltaje Analógico)',
         child: SizedBox(
@@ -608,12 +565,12 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
         ),
       );
 
-  // ── Panel wrapper ──────────────────────────────────────
+  // ── Panel wrapper ──────────────────────────────────────────────────────────
   Widget _panel({required String title, required Widget child}) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: kPanel,
-          border: Border.all(color: kBorder),
+          border: Border.all(color: kBorderN),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -622,11 +579,11 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
           children: [
             Container(
               padding: const EdgeInsets.only(bottom: 8),
-              decoration:
-                  const BoxDecoration(border: Border(bottom: BorderSide(color: kBorder))),
+              decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: kBorderN))),
               child: Text(title,
                   style: const TextStyle(
-                      color: kCyan, fontSize: 13, fontWeight: FontWeight.bold)),
+                      color: kCyanN, fontSize: 13, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             child,
@@ -635,12 +592,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
       );
 }
 
-
-
-
-
-
-// ── Chart Painter ──────────────────────────────────────────
+// ── Chart Painter ──────────────────────────────────────────────────────────
 class _ChartPainter extends CustomPainter {
   final List<double> data;
   _ChartPainter(this.data);
@@ -648,9 +600,8 @@ class _ChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const double maxY = 6;
-
     final gridPaint = Paint()
-      ..color = const Color(0xFF1A3644)
+      ..color      = const Color(0xFF1A3644)
       ..strokeWidth = 0.5;
 
     for (int i = 0; i <= 6; i++) {
@@ -678,27 +629,30 @@ class _ChartPainter extends CustomPainter {
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(
-        fillPath,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF00EAFF).withOpacity(0.25),
-              const Color(0xFF00EAFF).withOpacity(0.0),
-            ],
-          ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-          ..style = PaintingStyle.fill);
 
     canvas.drawPath(
-        path,
-        Paint()
-          ..color = const Color(0xFF00EAFF)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round);
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF00EAFF).withOpacity(0.25),
+            const Color(0xFF00EAFF).withOpacity(0.0),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+        ..style = PaintingStyle.fill,
+    );
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color       = const Color(0xFF00EAFF)
+        ..strokeWidth = 2
+        ..style       = PaintingStyle.stroke
+        ..strokeCap   = StrokeCap.round
+        ..strokeJoin  = StrokeJoin.round,
+    );
   }
 
   @override

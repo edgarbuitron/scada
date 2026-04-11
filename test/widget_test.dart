@@ -1,4 +1,4 @@
-import 'package:scada/main_prensado.dart';
+import '../app_scada/lib/main_prensado.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // 👇 IMPORTA TU APP REAL
