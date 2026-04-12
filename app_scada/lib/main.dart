@@ -5,11 +5,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+// Importaciones limpias
 import 'scada_neumatico.dart';
 import 'main_prensado.dart';
-import 'main_robot_3_ejes.dart';
+import 'main_robot_3_ejes.dart'; // Quitamos el "hide", lo necesitábamos
 import 'main_maquinados.dart';
 
+// ... (resto del código de paleta y colores)
 void main() => runApp(const MyApp());
 
 // ── Paleta ────────────────────────────────────────────────────────────────────
@@ -454,7 +456,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
   Widget _buildView() {
     switch (_view) {
       case AppView.dashboard:  return _dashboard();
-      case AppView.neumatico:  return const ScadaNeumaticoBoard();
+      case AppView.neumatico:  return ScadaNeumaticoBoard();
       case AppView.robot:      return ScadaRobot3EjesScreen();
       case AppView.maquinado:  return ScadaMaquinadosScreen();
       case AppView.prensado:   return ScadaPrensadoScreen();

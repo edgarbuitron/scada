@@ -232,12 +232,13 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBg,
-      body: Padding(
-        padding: const EdgeInsets.all(12),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: kBg,
+    body: Padding(
+      padding: const EdgeInsets.all(12),
+      child: SingleChildScrollView( // ✅ TODO SE MUEVE
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -245,26 +246,18 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
             const SizedBox(height: 12),
             _buildTopBar(),
             const SizedBox(height: 12),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildRow1(),
-                    const SizedBox(height: 12),
-                    _buildRow2(),
-                    const SizedBox(height: 12),
-                    _buildChartPanel(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
+            _buildRow1(),
+            const SizedBox(height: 12),
+            _buildRow2(),
+            const SizedBox(height: 12),
+            _buildChartPanel(),
+            const SizedBox(height: 20),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(

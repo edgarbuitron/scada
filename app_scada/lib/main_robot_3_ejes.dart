@@ -1,6 +1,3 @@
-// ============================================================
-//  ROBOT 3 EJES SCADA 4.0  –  Flutter
-//  Art. No. TM3DR24-A  –  3D Robot 24V
 //  8 Relés de salida · 6 Sensores (encoders + referencias)
 //  Secuencia: Rotar Base → Expandir Brazo → Eje Z → Gripper
 // ============================================================
@@ -22,21 +19,15 @@ const Color kAudit   = Color(0xFFFFAA00);
 const Color kDark    = Color(0xFF0C1820);
 const Color kMachine = Color(0xFFFF3366); // rojo para robot
 
-// ── App ───────────────────────────────────────────────────
 class ScadaRobot3EjesScreen extends StatelessWidget {
   const ScadaRobot3EjesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const ScadaRobotDashboard();
-      //child: Text(
-        //"Pantalla SCADA Robot 3 Ejes",
-        //style: TextStyle(color: Colors.white, fontSize: 22),
-      
-    
+    // Esto conecta tu menú principal con la lógica real del robot
+    return const ScadaRobotDashboard(); 
   }
 }
-
 // ── App ───────────────────────────────────────────────────
 //class ScadaApp extends StatelessWidget {
   //const ScadaApp({super.key});
@@ -351,39 +342,61 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
     setState(() { _isCycleRunning = false; _currentState = 0; _updatePermissions(); });
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 10),
-            _buildTopBar(),
-            const SizedBox(height: 10),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildRow1(),
-                    const SizedBox(height: 10),
-                    _buildRow2(),
-                    const SizedBox(height: 10),
-                    _buildStateProgress(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. AQUÍ ESTÁ TU CABECERO SUELTO (Ya no está fijo)
+              _buildHeader(),
+              const SizedBox(height: 16),
+
+              _buildTopBar(),
+              const SizedBox(height: 10),
+              
+              // 2. SE QUITÓ EL EXPANDED Y EL SCROLL INTERNO PARA EVITAR LA PANTALLA NEGRA
+              _buildRow1(),
+              const SizedBox(height: 10),
+              _buildRow2(),
+              const SizedBox(height: 10),
+              _buildStateProgress(),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
