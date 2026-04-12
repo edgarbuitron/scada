@@ -334,39 +334,30 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   // ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _kBg,
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 12),
-            _buildTopBar(),
-            const SizedBox(height: 12),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildStateProgress(),
-                    const SizedBox(height: 12),
-                    _buildRow1(),
-                    const SizedBox(height: 12),
-                    _buildRow2(),
-                    const SizedBox(height: 12),
-                    _buildAuditPanel(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+    // CÓDIGO CORREGIDO
+return Scaffold(
+  backgroundColor: _kBg,
+  body: SafeArea(
+    child: SingleChildScrollView( // El scroll ahora envuelve a TODO el Column
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeader(), // <--- AHORA ESTÁ ADENTRO
+          const SizedBox(height: 16),
+          _buildTopBar(),
+          const SizedBox(height: 10),
+          _buildRow1(),
+          const SizedBox(height: 10),
+          _buildRow2(),
+          const SizedBox(height: 10),
+          _buildStateProgress(),
+        ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   // ── Header ────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
