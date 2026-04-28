@@ -496,19 +496,21 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
           ),
           const SizedBox(height: 18),
           // Acceso rápido a estaciones
-          const Text('ACCESO RÁPIDO · ESTACIONES',
-              style: TextStyle(color: kTextMuted, fontSize: 10, letterSpacing: 1.5)),
-          const SizedBox(height: 10),
-          LayoutBuilder(builder: (_, box) {
-            final cols = box.maxWidth > 600 ? 4 : 2;
-            final w    = (box.maxWidth - 10.0 * (cols - 1)) / cols;
-            return Wrap(spacing: 10, runSpacing: 10, children: [
-              _stCard('⚙️','Centro Neumático', 'TMPPC24-A', kCyan,   AppView.neumatico,  w),
-              _stCard('🤖','Robot 3 Ejes',      'TM3DR24-A', kPurple, AppView.robot,      w),
-              _stCard('🛠️','Centro Maquinados', 'TMINL24-A', kGreen,  AppView.maquinado,  w),
-              _stCard('🛑','Centro Prensado',   'TMPUM24-A', kRed,    AppView.prensado,   w),
-            ]);
-          }),
+          //const Text('ACCESO RÁPIDO · ESTACIONES',
+              //style: TextStyle(color: kTextMuted, fontSize: 10, letterSpacing: 1.5)),
+          //const SizedBox(height: 10),
+          //LayoutBuilder(builder: (_, box) {
+            //final cols = box.maxWidth > 600 ? 4 : 2;
+            //final w    = (box.maxWidth - 10.0 * (cols - 1)) / cols;
+            //return Wrap(spacing: 10, runSpacing: 10, children: [
+              //_stCard('⚙️','Centro Neumático', 'TMPPC24-A', kCyan,   AppView.neumatico,  w),
+              //_stCard('🤖','Robot 3 Ejes',      'TM3DR24-A', kPurple, AppView.robot,      w),
+              //_stCard('🛠️','Centro Maquinados', 'TMINL24-A', kGreen,  AppView.maquinado,  w),
+              //_stCard('🛑','Centro Prensado',   'TMPUM24-A', kRed,    AppView.prensado,   w),
+            //]);
+          //}),
+
+
           const SizedBox(height: 8),
         ]),
       );
