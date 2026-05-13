@@ -1,0 +1,40 @@
+name: analytics_dashboard
+description: Analytics Reportes Dashboard independiente
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_chart: ^0.68.0
+  provider: ^6.1.5+1
+  web_socket_channel: ^3.0.3
+  mqtt_client: ^10.11.11
+  http: ^1.6.0
+  go_router: ^17.2.3
+  shared_preferences: ^2.5.5
+  google_fonts: ^8.1.0
+  syncfusion_flutter_gauges: ^33.2.4
+  lottie: ^3.3.3
+  flutter_animate: ^4.5.2
+  font_awesome_flutter: ^11.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/logo.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png
