@@ -51,10 +51,10 @@ class ConexionesScreen extends StatefulWidget {
 class _ConexionesScreenState extends State<ConexionesScreen> {
   // Lista de maquetas
   final List<Maqueta> _listaMaquetas = [
-    Maqueta(nombre:'Neumática', subtitulo:'Estación Neumática', ip:'192.168.4.1', ssid:'ESP32_NEUMATICA', estado:ConStatus.conectado, senal:-48, latencia:'12 ms', ultimaConexion:'10:31 AM'),
-    Maqueta(nombre:'Banda Transportadora',subtitulo:'Sistema de Banda', ip:'192.168.4.2', ssid:'ESP32_BANDA', estado:ConStatus.conectado, senal:-55, latencia:'18 ms', ultimaConexion:'10:30 AM'),
-    Maqueta(nombre:'Robot Cartesiano', subtitulo:'Brazo Robótico', ip:'192.168.4.3', ssid:'ESP32_ROBOT', estado:ConStatus.conectando, senal:-62, latencia:'--', ultimaConexion:'--'),
-    Maqueta(nombre:'Prensa Hidráulica', subtitulo:'Sistema de Prensado', ip:'192.168.4.4', ssid:'ESP32_PRENSA', estado:ConStatus.desconectado, senal: 0, latencia:'--', ultimaConexion:'--'),
+    Maqueta(nombre:'centro Neumático', subtitulo:'Estación Neumática', ip:'192.168.4.1', ssid:'ESP32_NEUMATICA', estado:ConStatus.conectado, senal:-48, latencia:'12 ms', ultimaConexion:'10:31 AM'),
+    Maqueta(nombre:'centro de maquinados',subtitulo:'Sistema de Banda', ip:'192.168.4.2', ssid:'ESP32_BANDA', estado:ConStatus.conectado, senal:-55, latencia:'18 ms', ultimaConexion:'10:30 AM'),
+    Maqueta(nombre:'Robot 3 ejes', subtitulo:'Brazo Robótico', ip:'192.168.4.3', ssid:'ESP32_ROBOT', estado:ConStatus.conectando, senal:-62, latencia:'--', ultimaConexion:'--'),
+    Maqueta(nombre:'centro de prensado', subtitulo:'Sistema de Prensado', ip:'192.168.4.4', ssid:'ESP32_PRENSA', estado:ConStatus.desconectado, senal: 0, latencia:'--', ultimaConexion:'--'),
     //Maqueta(nombre:'Horno Industrial', subtitulo:'Control de Temperatura',ip:'192.168.4.5', ssid:'ESP32_HORNO', estado:ConStatus.desconectado, senal: 0, latencia:'--', ultimaConexion:'--'),
   ];
 
@@ -99,7 +99,10 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
       Text('Gestiona y conecta tus maquetas disponibles', style: TextStyle(fontSize: 13, color: kMuted2)),
     ]),
     const Spacer(),
-    ElevatedButton.icon(
+
+
+
+   /*  ElevatedButton.icon(
       style: ElevatedButton.styleFrom(backgroundColor: kBlue,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -107,6 +110,13 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
       label: const Text('Escanear red', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       onPressed: () {},
     ),
+ */
+
+
+
+
+
+
   ]);
 
   Widget _buildKpis(int total, int conect, int desc) => Row(children: [
@@ -183,7 +193,7 @@ class _MaquetaRowState extends State<_MaquetaRow> {
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(m.nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kText)),
-              Text(m.subtitulo, style: const TextStyle(fontSize: 11, color: kMuted2)),
+              // Text(m.subtitulo, style: const TextStyle(fontSize: 11, color: kMuted2)),
             ]),
           ])),
           Expanded(flex: 3, child: Text(m.ip, style: const TextStyle(fontSize: 12, color: kMuted2))),

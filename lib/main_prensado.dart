@@ -371,14 +371,14 @@ return Scaffold(
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('CENTRO DE PRENSADO SCADA 4.0',
+                Text('CENTRO DE PRENSADO',
                     style: TextStyle(
                         color: _kOrange,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4)),
-                Text('Art. No. TMPUM24-A · Punching Machine 24V',
-                    style: TextStyle(color: _kText, fontSize: 11)),
+                //Text('Art. No. TMPUM24-A · Punching Machine 24V',
+                    //style: TextStyle(color: _kText, fontSize: 11)),
               ],
             ),
             Text(_clock,

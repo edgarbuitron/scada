@@ -27,7 +27,7 @@ class ScadaMaquinadosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Centro de Maquinados SCADA 4.0',
+        title: 'Centro de Maquinados',
         theme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: kBg,
           colorScheme: const ColorScheme.dark(primary: kCyan),
@@ -314,8 +314,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
               // 3. Ya NO usamos Expanded aquí
               _buildTopBar(),
               const SizedBox(height: 10),
-              //_buildRow1(),
-              //const SizedBox(height: 10),
+              _buildDigitalTwin(),
+              const SizedBox(height: 10),
               _buildRow2(),
               const SizedBox(height: 10),
               //_buildStateProgress(),
@@ -334,12 +334,12 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('CENTRO DE MAQUINADOS SCADA 4.0',
+              const Text('CENTRO DE MAQUINADOS',
                   style: TextStyle(color: kMachine, fontSize: 18,
                       fontWeight: FontWeight.bold, letterSpacing: 1.4)),
-              Text('Art. No. TMINL24-A  ·  Indexed Line 24V',
+             /*  Text('Art. No. TMINL24-A  ·  Indexed Line 24V',
                   style: TextStyle(color: kText.withOpacity(0.5), fontSize: 10,
-                      letterSpacing: 1)),
+                      letterSpacing: 1)), */
             ]),
             Text(_clock, style: const TextStyle(color: kText, fontSize: 14,
                 fontFamily: 'monospace')),

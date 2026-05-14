@@ -271,7 +271,7 @@ Widget build(BuildContext context) {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('CENTRO NEUMÁTICO SCADA 4.0',
+            const Text('CENTRO NEUMÁTICO SCADA',
                 style: TextStyle(
                     color: kCyanN, fontSize: 20,
                     fontWeight: FontWeight.bold, letterSpacing: 1.4)),

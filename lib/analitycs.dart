@@ -34,15 +34,15 @@ class AnalyticsApp extends StatelessWidget {
 
 // ─── Constantes de color ─────────────────────────────────────
 class AppColors {
-  static const bg          = Color(0xFF0D1117);
-  static const card        = Color(0xFF161B27);
-  static const border      = Color(0xFF1F2937);
+  static const bg = Color(0xFF0D1117);
+  static const card = Color(0xFF161B27);
+  static const border = Color(0xFF1F2937);
   static const textPrimary = Colors.white;
-  static const textMuted   = Color(0xFF6B7280);
-  static const blue        = Color(0xFF3B82F6);
-  static const green       = Color(0xFF10B981);
-  static const red         = Color(0xFFEF4444);
-  static const yellow      = Color(0xFFF59E0B);
+  static const textMuted = Color(0xFF6B7280);
+  static const blue = Color(0xFF3B82F6);
+  static const green = Color(0xFF10B981);
+  static const red = Color(0xFFEF4444);
+  static const yellow = Color(0xFFF59E0B);
 }
 
 // ─── Utilidades responsivas ───────────────────────────────────
@@ -51,49 +51,65 @@ class R {
   final double _w;
   const R(this._w);
 
-  bool get isSmall  => _w < 600;
+  bool get isSmall => _w < 600;
   bool get isMedium => _w >= 600 && _w < 1024;
-  bool get isLarge  => _w >= 1024;
+  bool get isLarge => _w >= 1024;
 
   /// Escala un valor base según el tamaño de pantalla
   double scale(double base) {
-    if (_w < 400)  return base * 0.78;
-    if (_w < 600)  return base * 0.88;
-    if (_w < 900)  return base * 0.94;
+    if (_w < 400) return base * 0.78;
+    if (_w < 600) return base * 0.88;
+    if (_w < 900) return base * 0.94;
     return base;
   }
 
   /// Padding horizontal global
   double get hPad {
-    if (_w < 400)  return 12;
-    if (_w < 600)  return 16;
-    if (_w < 900)  return 20;
+    if (_w < 400) return 12;
+    if (_w < 600) return 16;
+    if (_w < 900) return 20;
     return 28;
   }
 
   /// Alto de las gráficas de línea/barra
   double get chartHeight {
-    if (_w < 400)  return 140;
-    if (_w < 600)  return 160;
-    if (_w < 900)  return 175;
+    if (_w < 400) return 140;
+    if (_w < 600) return 160;
+    if (_w < 900) return 175;
     return 190;
   }
 
   /// Tamaño del PieChart
   double get pieSize {
-    if (_w < 600)  return 130;
-    if (_w < 900)  return 150;
+    if (_w < 600) return 130;
+    if (_w < 900) return 150;
     return 180;
   }
 }
 
 // ─── Datos del dashboard ──────────────────────────────────────
 class DashboardData {
-  static const List<double> produccion  = [1000,1200,1800,2200,2500,2300,3000];
-  static const List<double> tiempoActivo= [65,55,75,50,70,65,70];
-  static const List<double> fallas      = [5,8,4,10,6,5,7];
-  static const List<double> consumo     = [500,480,550,520,540,460,580];
-  static const List<String> fechas      = ['14/05','15/05','16/05','17/05','18/05','19/05','20/05'];
+  static const List<double> produccion = [
+    1000,
+    1200,
+    1800,
+    2200,
+    2500,
+    2300,
+    3000
+  ];
+  static const List<double> tiempoActivo = [65, 55, 75, 50, 70, 65, 70];
+  static const List<double> fallas = [5, 8, 4, 10, 6, 5, 7];
+  static const List<double> consumo = [500, 480, 550, 520, 540, 460, 580];
+  static const List<String> fechas = [
+    '14/05',
+    '15/05',
+    '16/05',
+    '17/05',
+    '18/05',
+    '19/05',
+    '20/05'
+  ];
 }
 
 // ─── Pantalla principal ───────────────────────────────────────
@@ -188,7 +204,7 @@ class _TitleBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Analytics / Reportes',
+          'Analisis',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: r.scale(22),
@@ -324,14 +340,38 @@ class _KPIRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      _buildCard('Producción','Total producido','12,540','unidades',
-          Icons.bar_chart_rounded, AppColors.blue, AppColors.blue.withOpacity(0.15)),
-      _buildCard('Tiempo Activo','Disponibilidad','87.6%','',
-          Icons.access_time_rounded, AppColors.green, AppColors.green.withOpacity(0.15)),
-      _buildCard('Fallas','Total fallos','24','',
-          Icons.warning_amber_rounded, AppColors.red, AppColors.red.withOpacity(0.15)),
-      _buildCard('Consumo','Energía utilizada','1,245','kWh',
-          Icons.bolt_rounded, AppColors.yellow, AppColors.yellow.withOpacity(0.15)),
+      _buildCard(
+          'Producción',
+          'Total producido',
+          '12,540',
+          'unidades',
+          Icons.bar_chart_rounded,
+          AppColors.blue,
+          AppColors.blue.withOpacity(0.15)),
+      _buildCard(
+          'Tiempo Activo',
+          'Disponibilidad',
+          '87.6%',
+          '',
+          Icons.access_time_rounded,
+          AppColors.green,
+          AppColors.green.withOpacity(0.15)),
+      _buildCard(
+          'Fallas',
+          'Total fallos',
+          '24',
+          '',
+          Icons.warning_amber_rounded,
+          AppColors.red,
+          AppColors.red.withOpacity(0.15)),
+      _buildCard(
+          'Consumo',
+          'Energía utilizada',
+          '1,245',
+          'kWh',
+          Icons.bolt_rounded,
+          AppColors.yellow,
+          AppColors.yellow.withOpacity(0.15)),
     ];
 
     // Pantallas pequeñas: cuadrícula 2×2
@@ -395,9 +435,9 @@ class _KPICard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize  = r.scale(48);
+    final iconSize = r.scale(48);
     final iconInner = r.scale(26);
-    final valueFz   = r.scale(r.isSmall ? 24 : 30);
+    final valueFz = r.scale(r.isSmall ? 24 : 30);
 
     return Container(
       padding: EdgeInsets.all(r.scale(16)),
@@ -595,8 +635,7 @@ class _BarChartCard extends StatelessWidget {
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
                   AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
@@ -680,8 +719,7 @@ class _LineChartCard extends StatelessWidget {
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
                   AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
@@ -758,8 +796,7 @@ class _BottomChartsRow extends StatelessWidget {
       r: r,
       title: 'Consumo de energía (kWh)',
       color: AppColors.yellow,
-      spots: List.generate(
-          DashboardData.consumo.length,
+      spots: List.generate(DashboardData.consumo.length,
           (i) => FlSpot(i.toDouble(), DashboardData.consumo[i])),
       maxY: 750,
       interval: 250,
@@ -794,14 +831,14 @@ class _PieChartCard extends StatelessWidget {
   static const _sections = [
     _PieSection('Eléctrico', 40, AppColors.blue),
     _PieSection('Neumático', 25, AppColors.yellow),
-    _PieSection('Mecánico',  20, AppColors.green),
-    _PieSection('Sensor',    15, AppColors.red),
+    _PieSection('Mecánico', 20, AppColors.green),
+    _PieSection('Sensor', 15, AppColors.red),
   ];
 
   @override
   Widget build(BuildContext context) {
     final pieSize = r.pieSize;
-    final radius  = pieSize * 0.4;
+    final radius = pieSize * 0.4;
 
     return _ChartCard(
       r: r,
@@ -896,20 +933,18 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: r.scale(11),
           height: r.scale(11),
-          decoration: BoxDecoration(
-              color: section.color, shape: BoxShape.circle),
+          decoration:
+              BoxDecoration(color: section.color, shape: BoxShape.circle),
         ),
         SizedBox(width: r.scale(6)),
         Text(
           section.label,
-          style: TextStyle(
-              color: AppColors.textPrimary, fontSize: r.scale(12)),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: r.scale(12)),
         ),
         SizedBox(width: r.scale(8)),
         Text(
           '${section.value.toInt()}%',
-          style: TextStyle(
-              color: AppColors.textMuted, fontSize: r.scale(12)),
+          style: TextStyle(color: AppColors.textMuted, fontSize: r.scale(12)),
         ),
       ],
     );
@@ -928,7 +963,7 @@ class _ChartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        r.scale(16), r.scale(14), r.scale(16), r.scale(10)),
+          r.scale(16), r.scale(14), r.scale(16), r.scale(10)),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),

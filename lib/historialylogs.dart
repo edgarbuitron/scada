@@ -137,8 +137,8 @@ class _LogsScreenState extends State<LogsScreen> {
       "Temperatura alta",  "Ciclo completado",
     ];
     final maquetas = [
-      "Prensa Hidráulica", "Brazo Robótico",
-      "Sistema Neumático", "Pick & Place",
+      "centro neumatico", "centro de maquinados",
+      "centro de prensado", "robot 3 ejes",
     ];
     final usuarios = [
       "Juan Pérez", "María López", "Carlos Ruiz", "Ana López",
@@ -339,7 +339,7 @@ class _LogsScreenState extends State<LogsScreen> {
         _buildDateField(ctx, r, "Fecha final",   endDate,   false),
         // Maqueta
         _buildDropdown(r, "Maqueta", maqueta,
-          ["Todas","Prensa Hidráulica","Brazo Robótico","Sistema Neumático","Pick & Place"],
+          ["Todas","centro neumatico","centro de maquinados","centro de prensado","robot 3 ejes"],
           (v) => setState(() { maqueta = v!; currentPage = 1; }),
         ),
         // Tipo evento

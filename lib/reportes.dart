@@ -139,7 +139,7 @@ class HeaderWidget extends StatelessWidget {
         ),
         const _DateBox(),
         const SizedBox(width: 12),
-        const GenerarReporteBtn(),
+        //const GenerarReporteBtn(),
       ],
     );
   }
@@ -165,7 +165,7 @@ class _DateBox extends StatelessWidget {
   }
 }
 
-class GenerarReporteBtn extends StatelessWidget {
+/* class GenerarReporteBtn extends StatelessWidget {
   const GenerarReporteBtn({super.key});
 
   @override
@@ -192,6 +192,12 @@ class GenerarReporteBtn extends StatelessWidget {
     );
   }
 }
+
+ */
+
+
+
+
 
 class KpiRow extends StatelessWidget {
   const KpiRow({super.key});

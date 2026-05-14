@@ -35,7 +35,7 @@ class ScadaRobot3EjesScreen extends StatelessWidget {
   //@override
   //Widget build(BuildContext context) => MaterialApp(
         //debugShowCheckedModeBanner: false,
-        //title: 'Robot 3 Ejes SCADA 4.0',
+        //title: 'Robot 3 Ejes SCADA 4.',
         //theme: ThemeData.dark().copyWith(
           //scaffoldBackgroundColor: kBg,
           //colorScheme: const ColorScheme.dark(primary: kCyan),
@@ -403,12 +403,12 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('ROBOT 3 EJES SCADA 4.0',
+              const Text('ROBOT 3 EJES',
                   style: TextStyle(color: kMachine, fontSize: 18,
                       fontWeight: FontWeight.bold, letterSpacing: 1.4)),
-              Text('Art. No. TM3DR24-A  ·  3D Robot 24V  ·  Pick & Place',
-                  style: TextStyle(color: kText.withOpacity(0.5),
-                      fontSize: 10, letterSpacing: 1)),
+              //Text('Art. No. TM3DR24-A  ·  3D Robot 24V  ·  Pick & Place',
+                  //style: TextStyle(color: kText.withOpacity(0.5),
+                      //fontSize: 10, letterSpacing: 1)),
             ]),
             Text(_clock, style: const TextStyle(
                 color: kText, fontSize: 14, fontFamily: 'monospace')),

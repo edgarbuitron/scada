@@ -140,7 +140,7 @@ class _TopCards extends StatelessWidget {
 
       Widget syncCard   = _SyncCard();
       Widget storageCard = _StorageCard();
-      Widget serverCard  = _ServerCard();
+      //Widget serverCard  = _ServerCard();
 
       if (isNarrow) {
         return Column(children: [
@@ -148,7 +148,7 @@ class _TopCards extends StatelessWidget {
           const SizedBox(height: 12),
           storageCard,
           const SizedBox(height: 12),
-          serverCard,
+          //serverCard,
         ]);
       }
 
@@ -159,7 +159,7 @@ class _TopCards extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: storageCard),
           const SizedBox(width: 12),
-          Expanded(child: serverCard),
+          //Expanded(child: serverCard),
         ],
       );
     });
@@ -282,6 +282,12 @@ class _DonutPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
+
+
+/* 
+
+
+
 // ── Estado del servidor ──
 class _ServerCard extends StatelessWidget {
   @override
@@ -322,6 +328,13 @@ class _ServerCard extends StatelessWidget {
     );
   }
 }
+ */
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────
 // BOTTOM ROW  (DB card + Sync info card)

@@ -16,7 +16,7 @@ const kMuted2 = Color(0xFF8B9CBD);
 // ─── Datos de la tabla ────────────────────────────────────────────────────────
 const _rendimiento = [
   {
-    'nombre': 'Neumática',
+    'nombre': 'centro Neumático',
     'env': 2540,
     'rec': 2480,
     'per': 60,
@@ -24,7 +24,7 @@ const _rendimiento = [
     'lat': '12 ms'
   },
   {
-    'nombre': 'Banda Transportadora',
+    'nombre': 'centro de maquinados',
     'env': 2320,
     'rec': 2270,
     'per': 50,
@@ -32,7 +32,7 @@ const _rendimiento = [
     'lat': '18 ms'
   },
   {
-    'nombre': 'Robot Cartesiano',
+    'nombre': 'Robot 3 ejes',
     'env': 2120,
     'rec': 1980,
     'per': 140,
@@ -40,19 +40,11 @@ const _rendimiento = [
     'lat': '--'
   },
   {
-    'nombre': 'Prensa Hidráulica',
+    'nombre': 'centro de prensado',
     'env': 1980,
     'rec': 1890,
     'per': 90,
     'pct': '4.55%',
-    'lat': '--'
-  },
-  {
-    'nombre': 'Horno Industrial',
-    'env': 1580,
-    'rec': 1528,
-    'per': 52,
-    'pct': '3.29%',
     'lat': '--'
   },
 ];
@@ -72,10 +64,10 @@ const _xLabels = [
 
 final _series = <String, List<double>>{
   'Neumática': [72, 78, 68, 75, 80, 70, 75, 82],
-  'Banda': [45, 50, 48, 52, 55, 47, 50, 53],
+  'maquinados': [45, 50, 48, 52, 55, 47, 50, 53],
   'Robot': [30, 35, 38, 32, 28, 34, 36, 30],
-  'Prensa': [20, 22, 25, 18, 24, 20, 22, 24],
-  'Horno': [55, 60, 58, 62, 65, 58, 60, 63],
+  'Prensado': [20, 22, 25, 18, 24, 20, 22, 24],
+  
 };
 
 const _seriesColors = [
@@ -123,29 +115,27 @@ class DiagnosticoScreen extends StatelessWidget {
         ),
       );
 
+
+
+      
+
   // ── Header ─────────────────────────────────────────────────────────────────
-  Widget _buildHeader() => Row(children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-          Text('Diagnóstico de conexiones',
-              style: TextStyle(
-                  fontSize: 24, fontWeight: FontWeight.bold, color: kText)),
-          SizedBox(height: 3),
-          Text('Monitorea el estado y rendimiento de todas las conexiones',
-              style: TextStyle(fontSize: 13, color: kMuted2)),
-        ]),
-        const Spacer(),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-              backgroundColor: kBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8))),
-          icon: const Icon(Icons.file_download_outlined, size: 16),
-          label: const Text('Exportar reporte',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          onPressed: () {},
-        ),
-      ]);
+Widget _buildHeader() => Row(children: [
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+        Text('Diagnóstico de conexiones',
+            style: TextStyle(
+                fontSize: 24, fontWeight: FontWeight.bold, color: kText)),
+        SizedBox(height: 3),
+        Text('Monitorea el estado y rendimiento de todas las conexiones',
+            style: TextStyle(fontSize: 13, color: kMuted2)),
+      ]),
+      const Spacer(),
+      // Aquí estaba el botón que eliminaste
+    ]);
+
+
+
+
 
   // ── KPI cards ──────────────────────────────────────────────────────────────
   Widget _buildKpis() => Row(children: [

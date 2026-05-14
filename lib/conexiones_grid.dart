@@ -28,11 +28,11 @@ class MaquetaData {
 }
 
 final _maquetas = [
-  const MaquetaData(nombre:'Neumática',           subtitulo:'Estación Neumática',    ip:'192.168.4.1', estado:ConStatus.conectado,    senal:-48, latencia:'12 ms', ultimaConexion:'10:31 AM', icon:Icons.settings_input_component_outlined),
-  const MaquetaData(nombre:'Banda Transportadora',subtitulo:'Sistema de Banda',      ip:'192.168.4.2', estado:ConStatus.conectado,    senal:-55, latencia:'18 ms', ultimaConexion:'10:30 AM', icon:Icons.linear_scale_outlined),
-  const MaquetaData(nombre:'Robot Cartesiano',    subtitulo:'Brazo Robótico',        ip:'192.168.4.3', estado:ConStatus.conectando,   senal:-62, latencia:'18 ms', ultimaConexion:'--',        icon:Icons.precision_manufacturing_outlined),
-  const MaquetaData(nombre:'Prensa Hidráulica',   subtitulo:'Sistema de Prensado',   ip:'192.168.4.4', estado:ConStatus.desconectado, senal:0,   latencia:'--',    ultimaConexion:'--',        icon:Icons.compress_outlined),
-  const MaquetaData(nombre:'Horno Industrial',    subtitulo:'Control de Temperatura',ip:'192.168.4.5', estado:ConStatus.desconectado, senal:0,   latencia:'--',    ultimaConexion:'--',        icon:Icons.whatshot_outlined),
+  const MaquetaData(nombre:'centro Neumático',           subtitulo:'Estación Neumática',    ip:'192.168.4.1', estado:ConStatus.conectado,    senal:-48, latencia:'12 ms', ultimaConexion:'10:31 AM', icon:Icons.settings_input_component_outlined),
+  const MaquetaData(nombre:'centro de maquinados',subtitulo:'Sistema de Banda',      ip:'192.168.4.2', estado:ConStatus.conectado,    senal:-55, latencia:'18 ms', ultimaConexion:'10:30 AM', icon:Icons.linear_scale_outlined),
+  const MaquetaData(nombre:'Robot 3 ejes',    subtitulo:'Brazo Robótico',        ip:'192.168.4.3', estado:ConStatus.conectando,   senal:-62, latencia:'18 ms', ultimaConexion:'--',        icon:Icons.precision_manufacturing_outlined),
+  const MaquetaData(nombre:'centro de prensado',   subtitulo:'Sistema de Prensado',   ip:'192.168.4.4', estado:ConStatus.desconectado, senal:0,   latencia:'--',    ultimaConexion:'--',        icon:Icons.compress_outlined),
+  //const MaquetaData(nombre:'Horno Industrial',    subtitulo:'Control de Temperatura',ip:'192.168.4.5', estado:ConStatus.desconectado, senal:0,   latencia:'--',    ultimaConexion:'--',        icon:Icons.whatshot_outlined),
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -81,7 +81,10 @@ class _ConexionesGridScreenState extends State<ConexionesGridScreen>
                 Text('Gestiona y conecta tus maquetas disponibles', style: TextStyle(fontSize: 12, color: kMuted2)),
               ]),
               const Spacer(),
-              ElevatedButton.icon(
+              
+              
+              
+              /* ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: kBlue,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -89,6 +92,9 @@ class _ConexionesGridScreenState extends State<ConexionesGridScreen>
                 label: const Text('Escanear red', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 onPressed: () {},
               ),
+ */
+
+
             ]),
             const SizedBox(height: 16),
 
