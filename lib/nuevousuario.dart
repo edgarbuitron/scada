@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 void main() => runApp(const NuevoUsuarioApp());
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
-const kBg       = Color(0xFF0D1321);
-const kCard     = Color(0xFF131D2E);
+const kBg = Color(0xFF0D1321);
+const kCard = Color(0xFF131D2E);
 const kCardDark = Color(0xFF0F1825);
-const kBorder   = Color(0xFF1E2D45);
-const kBlue     = Color(0xFF3B82F6);
-const kText     = Color(0xFFE2E8F0);
-const kMuted    = Color(0xFF64748B);
-const kMuted2   = Color(0xFF8B9CBD);
+const kBorder = Color(0xFF1E2D45);
+const kBlue = Color(0xFF3B82F6);
+const kText = Color(0xFFE2E8F0);
+const kMuted = Color(0xFF64748B);
+const kMuted2 = Color(0xFF8B9CBD);
 
 // ═════════════════════════════════════════════════════════════════════════════
 class NuevoUsuarioApp extends StatelessWidget {
@@ -29,7 +29,8 @@ class NuevoUsuarioApp extends StatelessWidget {
                 s.contains(WidgetState.selected) ? kBlue : Colors.transparent),
             checkColor: WidgetStateProperty.all(Colors.white),
             side: const BorderSide(color: Color(0xFF2A3550), width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
         ),
         home: const _HomeScreen(),
@@ -47,7 +48,8 @@ class _HomeScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: kBlue,
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             icon: const Icon(Icons.person_add_outlined),
             label: const Text('+ Nuevo usuario',
@@ -73,9 +75,9 @@ class NuevoUsuarioDialog extends StatefulWidget {
 }
 
 class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
-  final _nombreCtrl   = TextEditingController();
+  final _nombreCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
-  final _correoCtrl   = TextEditingController();
+  final _correoCtrl = TextEditingController();
   String _rol = 'Operador';
 
   @override
@@ -132,7 +134,8 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                       shape: BoxShape.circle,
                       border: Border.all(color: kBorder, width: 2),
                     ),
-                    child: const Icon(Icons.person_outline, size: 40, color: kMuted2),
+                    child: const Icon(Icons.person_outline,
+                        size: 40, color: kMuted2),
                   ),
                   Positioned(
                     bottom: 0,
@@ -140,8 +143,10 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                     child: Container(
                       width: 26,
                       height: 26,
-                      decoration: const BoxDecoration(color: kBlue, shape: BoxShape.circle),
-                      child: const Icon(Icons.add, size: 16, color: Colors.white),
+                      decoration: const BoxDecoration(
+                          color: kBlue, shape: BoxShape.circle),
+                      child:
+                          const Icon(Icons.add, size: 16, color: Colors.white),
                     ),
                   ),
                 ]),
@@ -178,7 +183,13 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                       const SizedBox(height: 6),
                       _dropdown(
                           _rol,
-                          ['Operador', 'Administrador', 'Supervisor', 'Mantenimiento', 'Invitado'],
+                          [
+                            'Operador',
+                            'Administrador',
+                            'Supervisor',
+                            'Mantenimiento',
+                            'Invitado'
+                          ],
                           (v) => setState(() => _rol = v!)),
                     ],
                   ),
@@ -188,8 +199,10 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: kText,
                     side: const BorderSide(color: kBorder),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -213,10 +226,12 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                       foregroundColor: kText,
                       side: const BorderSide(color: kBorder),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar', style: TextStyle(fontSize: 14)),
+                    child:
+                        const Text('Cancelar', style: TextStyle(fontSize: 14)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -225,11 +240,13 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kBlue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Guardar usuario',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ]),
@@ -240,7 +257,8 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
     );
   }
 
-  Widget _dropdown(String value, List<String> items, void Function(String?) cb) =>
+  Widget _dropdown(
+          String value, List<String> items, void Function(String?) cb) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
@@ -254,7 +272,8 @@ class _NuevoUsuarioDialogState extends State<NuevoUsuarioDialog> {
             isExpanded: true,
             dropdownColor: kCardDark,
             style: const TextStyle(fontSize: 13, color: kText),
-            icon: const Icon(Icons.keyboard_arrow_down, color: kMuted2, size: 20),
+            icon:
+                const Icon(Icons.keyboard_arrow_down, color: kMuted2, size: 20),
             onChanged: cb,
             items: items
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -297,14 +316,54 @@ class _PermisosDialogState extends State<PermisosDialog> {
   void initState() {
     super.initState();
     _modulos = [
-      _Modulo(nombre: 'Dashboard',       icon: Icons.dashboard_outlined,      ver: true,  editar: true,  eliminar: false),
-      _Modulo(nombre: 'Maquetas',        icon: Icons.view_quilt_outlined,      ver: true,  editar: false, eliminar: true),
-      _Modulo(nombre: 'Monitoreo',       icon: Icons.monitor_heart_outlined,   ver: true,  editar: false, eliminar: false),
-      _Modulo(nombre: 'Alarmas',         icon: Icons.notifications_outlined,   ver: true,  editar: false, eliminar: false),
-      _Modulo(nombre: 'Historial / Logs',icon: Icons.history_outlined,         ver: true,  editar: false, eliminar: false),
-      _Modulo(nombre: 'Reportes',        icon: Icons.description_outlined,     ver: false, editar: false, eliminar: false),
-      _Modulo(nombre: 'Cloud Sync',      icon: Icons.cloud_outlined,           ver: true,  editar: true,  eliminar: false),
-      _Modulo(nombre: 'Configuración',   icon: Icons.settings_outlined,        ver: true,  editar: false, eliminar: false),
+      _Modulo(
+          nombre: 'Dashboard',
+          icon: Icons.dashboard_outlined,
+          ver: true,
+          editar: true,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Maquetas',
+          icon: Icons.view_quilt_outlined,
+          ver: true,
+          editar: false,
+          eliminar: true),
+      _Modulo(
+          nombre: 'Monitoreo',
+          icon: Icons.monitor_heart_outlined,
+          ver: true,
+          editar: false,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Alarmas',
+          icon: Icons.notifications_outlined,
+          ver: true,
+          editar: false,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Historial / Logs',
+          icon: Icons.history_outlined,
+          ver: true,
+          editar: false,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Reportes',
+          icon: Icons.description_outlined,
+          ver: false,
+          editar: false,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Cloud Sync',
+          icon: Icons.cloud_outlined,
+          ver: true,
+          editar: true,
+          eliminar: false),
+      _Modulo(
+          nombre: 'Configuración',
+          icon: Icons.settings_outlined,
+          ver: true,
+          editar: false,
+          eliminar: false),
     ];
     _refreshSelectAll();
   }
@@ -317,8 +376,8 @@ class _PermisosDialogState extends State<PermisosDialog> {
     final val = v ?? false;
     setState(() {
       for (final m in _modulos) {
-        m.ver     = val;
-        m.editar  = val;
+        m.ver = val;
+        m.editar = val;
         m.eliminar = val;
       }
       _selectAll = val;
@@ -338,7 +397,6 @@ class _PermisosDialogState extends State<PermisosDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ══════════════════════════════════════════════════════════════
             // ENCABEZADO – fijo, nunca se desplaza
             // ══════════════════════════════════════════════════════════════
@@ -387,7 +445,6 @@ class _PermisosDialogState extends State<PermisosDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // ── Tabla de permisos ──
                     Container(
                       decoration: BoxDecoration(
@@ -448,7 +505,8 @@ class _PermisosDialogState extends State<PermisosDialog> {
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar', style: TextStyle(fontSize: 14)),
+                    child:
+                        const Text('Cancelar', style: TextStyle(fontSize: 14)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -462,7 +520,8 @@ class _PermisosDialogState extends State<PermisosDialog> {
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Guardar permisos',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ]),
@@ -487,21 +546,27 @@ class _PermisosDialogState extends State<PermisosDialog> {
             child: Center(
                 child: Text('Ver',
                     style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600, color: kMuted2))),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kMuted2))),
           ),
           Expanded(
             flex: 2,
             child: Center(
                 child: Text('Editar',
                     style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600, color: kMuted2))),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kMuted2))),
           ),
           Expanded(
             flex: 2,
             child: Center(
                 child: Text('Eliminar',
                     style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600, color: kMuted2))),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kMuted2))),
           ),
         ]),
       );
@@ -571,7 +636,8 @@ Widget _closeBtn(BuildContext context) => IconButton(
 
 Widget _sectionLabel(String text) => Text(
       text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kText),
+      style: const TextStyle(
+          fontSize: 14, fontWeight: FontWeight.w600, color: kText),
     );
 
 Widget _fieldLabel(String text) => Text(
@@ -595,7 +661,8 @@ Widget _inputField(
         hintStyle: const TextStyle(fontSize: 13, color: kMuted),
         filled: true,
         fillColor: kCardDark,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: kBorder),

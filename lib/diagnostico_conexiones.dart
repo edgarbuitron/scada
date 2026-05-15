@@ -67,7 +67,6 @@ final _series = <String, List<double>>{
   'maquinados': [45, 50, 48, 52, 55, 47, 50, 53],
   'Robot': [30, 35, 38, 32, 28, 34, 36, 30],
   'Prensado': [20, 22, 25, 18, 24, 20, 22, 24],
-  
 };
 
 const _seriesColors = [
@@ -115,27 +114,19 @@ class DiagnosticoScreen extends StatelessWidget {
         ),
       );
 
-
-
-      
-
   // ── Header ─────────────────────────────────────────────────────────────────
-Widget _buildHeader() => Row(children: [
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-        Text('Diagnóstico de conexiones',
-            style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.bold, color: kText)),
-        SizedBox(height: 3),
-        Text('Monitorea el estado y rendimiento de todas las conexiones',
-            style: TextStyle(fontSize: 13, color: kMuted2)),
-      ]),
-      const Spacer(),
-      // Aquí estaba el botón que eliminaste
-    ]);
-
-
-
-
+  Widget _buildHeader() => Row(children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+          Text('Diagnóstico de conexiones',
+              style: TextStyle(
+                  fontSize: 24, fontWeight: FontWeight.bold, color: kText)),
+          SizedBox(height: 3),
+          Text('Monitorea el estado y rendimiento de todas las conexiones',
+              style: TextStyle(fontSize: 13, color: kMuted2)),
+        ]),
+        const Spacer(),
+        // Aquí estaba el botón que eliminaste
+      ]);
 
   // ── KPI cards ──────────────────────────────────────────────────────────────
   Widget _buildKpis() => Row(children: [

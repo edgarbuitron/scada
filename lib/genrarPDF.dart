@@ -83,12 +83,10 @@ class GenerarReporteDialog extends StatefulWidget {
   const GenerarReporteDialog({super.key});
 
   @override
-  State<GenerarReporteDialog> createState() =>
-      _GenerarReporteDialogState();
+  State<GenerarReporteDialog> createState() => _GenerarReporteDialogState();
 }
 
-class _GenerarReporteDialogState
-    extends State<GenerarReporteDialog> {
+class _GenerarReporteDialogState extends State<GenerarReporteDialog> {
   String selectedMaqueta = "Todas";
 
   final List<String> maquetas = [
@@ -127,10 +125,10 @@ class _GenerarReporteDialogState
   ];
 
   Future<void> pickDate(
-      BuildContext context,
-      ReporteItem item,
-      bool isStart,
-      ) async {
+    BuildContext context,
+    ReporteItem item,
+    bool isStart,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -191,9 +189,7 @@ class _GenerarReporteDialogState
                   )
                 ],
               ),
-
               const SizedBox(height: 20),
-
               const Text(
                 "Tipos de reporte",
                 style: TextStyle(
@@ -202,13 +198,9 @@ class _GenerarReporteDialogState
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 14),
-
               ...reportes.map((item) => buildReporteCard(item)),
-
               const SizedBox(height: 20),
-
               const Text(
                 "Maqueta",
                 style: TextStyle(
@@ -216,12 +208,9 @@ class _GenerarReporteDialogState
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
                   color: kCardDark,
                   borderRadius: BorderRadius.circular(10),
@@ -248,16 +237,13 @@ class _GenerarReporteDialogState
                   ),
                 ),
               ),
-
               const SizedBox(height: 26),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kBlue,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: showConfirmModal,
                   icon: const Icon(Icons.picture_as_pdf),
@@ -297,8 +283,7 @@ class _GenerarReporteDialogState
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.title,
@@ -329,7 +314,6 @@ class _GenerarReporteDialogState
               ],
             ),
           ),
-
           if (item.selected) ...[
             const SizedBox(height: 14),
             Row(
@@ -358,10 +342,10 @@ class _GenerarReporteDialogState
   }
 
   Widget dateButton(
-      String label,
-      String value,
-      VoidCallback onTap,
-      ) {
+    String label,
+    String value,
+    VoidCallback onTap,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -392,95 +376,89 @@ class _GenerarReporteDialogState
     );
   }
 
-void showConfirmModal() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black54,
-    builder: (_) {
-      Future.delayed(const Duration(seconds: 2), () {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-      });
+  void showConfirmModal() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (_) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        });
 
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Center(
-          child: Container(
-            width: 280,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 28,
-            ),
-            decoration: BoxDecoration(
-              color: kCard,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    color: kGreen,
-                    shape: BoxShape.circle,
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Center(
+            child: Container(
+              width: 280,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 28,
+              ),
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 42,
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      color: kGreen,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 42,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 18),
-
-                const Text(
-                  "¡Reporte generado!",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: kText,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 18),
+                  const Text(
+                    "¡Reporte generado!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  "El PDF se generó correctamente",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: kMuted,
-                    fontSize: 13,
+                  const SizedBox(height: 8),
+                  const Text(
+                    "El PDF se generó correctamente",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kMuted,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 18),
-
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: kBlue,
+                  const SizedBox(height: 18),
+                  const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: kBlue,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 }

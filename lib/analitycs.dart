@@ -1,12 +1,3 @@
-// ============================================================
-// Analytics Dashboard - Flutter/Dart  (RESPONSIVE)
-// Requiere en pubspec.yaml:
-//   dependencies:
-//     flutter:
-//       sdk: flutter
-//     fl_chart: ^0.68.0
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'genrarPDF.dart';
@@ -15,7 +6,6 @@ void main() {
   runApp(const AnalyticsApp());
 }
 
-// ─── App Root ────────────────────────────────────────────────
 class AnalyticsApp extends StatelessWidget {
   const AnalyticsApp({super.key});
 
@@ -32,7 +22,6 @@ class AnalyticsApp extends StatelessWidget {
   }
 }
 
-// ─── Constantes de color ─────────────────────────────────────
 class AppColors {
   static const bg = Color(0xFF0D1117);
   static const card = Color(0xFF161B27);
@@ -45,8 +34,6 @@ class AppColors {
   static const yellow = Color(0xFFF59E0B);
 }
 
-// ─── Utilidades responsivas ───────────────────────────────────
-/// Breakpoints: small < 600, medium 600–1023, large ≥ 1024
 class R {
   final double _w;
   const R(this._w);
@@ -55,7 +42,6 @@ class R {
   bool get isMedium => _w >= 600 && _w < 1024;
   bool get isLarge => _w >= 1024;
 
-  /// Escala un valor base según el tamaño de pantalla
   double scale(double base) {
     if (_w < 400) return base * 0.78;
     if (_w < 600) return base * 0.88;
@@ -63,7 +49,6 @@ class R {
     return base;
   }
 
-  /// Padding horizontal global
   double get hPad {
     if (_w < 400) return 12;
     if (_w < 600) return 16;
@@ -71,7 +56,6 @@ class R {
     return 28;
   }
 
-  /// Alto de las gráficas de línea/barra
   double get chartHeight {
     if (_w < 400) return 140;
     if (_w < 600) return 160;
@@ -79,7 +63,6 @@ class R {
     return 190;
   }
 
-  /// Tamaño del PieChart
   double get pieSize {
     if (_w < 600) return 130;
     if (_w < 900) return 150;
@@ -87,20 +70,33 @@ class R {
   }
 }
 
-// ─── Datos del dashboard ──────────────────────────────────────
+class StationAnalyticsData {
+  final String name;
+  final String produccionTotal;
+  final String tiempoActivoPorcentaje;
+  final String fallasTotales;
+  final String consumoTotal;
+  final List<double> produccion;
+  final List<double> tiempoActivo;
+  final List<double> fallas;
+  final List<double> consumo;
+  final List<_PieSection> pieData;
+
+  const StationAnalyticsData({
+    required this.name,
+    required this.produccionTotal,
+    required this.tiempoActivoPorcentaje,
+    required this.fallasTotales,
+    required this.consumoTotal,
+    required this.produccion,
+    required this.tiempoActivo,
+    required this.fallas,
+    required this.consumo,
+    required this.pieData,
+  });
+}
+
 class DashboardData {
-  static const List<double> produccion = [
-    1000,
-    1200,
-    1800,
-    2200,
-    2500,
-    2300,
-    3000
-  ];
-  static const List<double> tiempoActivo = [65, 55, 75, 50, 70, 65, 70];
-  static const List<double> fallas = [5, 8, 4, 10, 6, 5, 7];
-  static const List<double> consumo = [500, 480, 550, 520, 540, 460, 580];
   static const List<String> fechas = [
     '14/05',
     '15/05',
@@ -110,14 +106,129 @@ class DashboardData {
     '19/05',
     '20/05'
   ];
+
+  static final List<StationAnalyticsData> stations = [
+    // 0: General
+    const StationAnalyticsData(
+      name: 'General',
+      produccionTotal: '12,540',
+      tiempoActivoPorcentaje: '87.6%',
+      fallasTotales: '24',
+      consumoTotal: '1,245',
+      produccion: [1000, 1200, 1800, 2200, 2500, 2300, 3000],
+      tiempoActivo: [65, 55, 75, 50, 70, 65, 70],
+      fallas: [5, 8, 4, 10, 6, 5, 7],
+      consumo: [500, 480, 550, 520, 540, 460, 580],
+      pieData: [
+        _PieSection('Eléctrico', 40, AppColors.blue),
+        _PieSection('Neumático', 25, AppColors.yellow),
+        _PieSection('Mecánico', 20, AppColors.green),
+        _PieSection('Sensor', 15, AppColors.red),
+      ],
+    ),
+    // 1: Neumático
+    const StationAnalyticsData(
+      name: 'Neumático',
+      produccionTotal: '3,120',
+      tiempoActivoPorcentaje: '92.1%',
+      fallasTotales: '5',
+      consumoTotal: '310',
+      produccion: [250, 300, 450, 550, 600, 580, 720],
+      tiempoActivo: [90, 88, 95, 91, 93, 89, 94],
+      fallas: [1, 2, 0, 1, 0, 1, 0],
+      consumo: [120, 110, 130, 125, 135, 115, 140],
+      pieData: [
+        _PieSection('Válvula', 50, AppColors.blue),
+        _PieSection('Cilindro', 30, AppColors.yellow),
+        _PieSection('Manguera', 15, AppColors.green),
+        _PieSection('Sensor', 5, AppColors.red),
+      ],
+    ),
+    // 2: Maquinados
+    const StationAnalyticsData(
+      name: 'Maquinados',
+      produccionTotal: '2,890',
+      tiempoActivoPorcentaje: '85.3%',
+      fallasTotales: '8',
+      consumoTotal: '450',
+      produccion: [200, 280, 400, 500, 650, 550, 680],
+      tiempoActivo: [80, 82, 88, 79, 85, 81, 87],
+      fallas: [2, 1, 3, 0, 1, 1, 0],
+      consumo: [180, 170, 200, 190, 210, 180, 220],
+      pieData: [
+        _PieSection('Motor', 60, AppColors.blue),
+        _PieSection('Banda', 20, AppColors.yellow),
+        _PieSection('CNC', 15, AppColors.green),
+        _PieSection('Eléctrico', 5, AppColors.red),
+      ],
+    ),
+    // 3: Robot
+    const StationAnalyticsData(
+      name: 'Robot 3 Ejes',
+      produccionTotal: '3,510',
+      tiempoActivoPorcentaje: '95.8%',
+      fallasTotales: '3',
+      consumoTotal: '280',
+      produccion: [300, 350, 500, 600, 700, 650, 810],
+      tiempoActivo: [95, 96, 94, 97, 98, 93, 99],
+      fallas: [0, 0, 1, 0, 1, 0, 1],
+      consumo: [100, 105, 110, 115, 120, 100, 125],
+      pieData: [
+        _PieSection('Gripper', 40, AppColors.blue),
+        _PieSection('Eje Z', 30, AppColors.yellow),
+        _PieSection('Eje X/Y', 20, AppColors.green),
+        _PieSection('Firmware', 10, AppColors.red),
+      ],
+    ),
+    // 4: Prensado
+    const StationAnalyticsData(
+      name: 'Prensado',
+      produccionTotal: '3,020',
+      tiempoActivoPorcentaje: '82.0%',
+      fallasTotales: '8',
+      consumoTotal: '205',
+      produccion: [250, 270, 450, 550, 650, 600, 700],
+      tiempoActivo: [78, 80, 85, 75, 88, 79, 83],
+      fallas: [2, 3, 0, 1, 1, 1, 0],
+      consumo: [80, 75, 90, 85, 95, 80, 100],
+      pieData: [
+        _PieSection('Hidráulico', 55, AppColors.blue),
+        _PieSection('Molde', 25, AppColors.yellow),
+        _PieSection('Eléctrico', 15, AppColors.green),
+        _PieSection('Otros', 5, AppColors.red),
+      ],
+    ),
+  ];
 }
 
-// ─── Pantalla principal ───────────────────────────────────────
-class AnalyticsDashboard extends StatelessWidget {
+class AnalyticsDashboard extends StatefulWidget {
   const AnalyticsDashboard({super.key});
 
   @override
+  State<AnalyticsDashboard> createState() => _AnalyticsDashboardState();
+}
+
+class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
+  int _selectedSectionIndex = 0;
+  final List<String> _sections = [
+    'General',
+    'Neumático',
+    'Maquinados',
+    'Robot 3 Ejes',
+    'Prensado'
+  ];
+
+  void _onSectionSelected(int index) {
+    setState(() {
+      _selectedSectionIndex = index;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final StationAnalyticsData currentData =
+        DashboardData.stations[_selectedSectionIndex];
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: LayoutBuilder(
@@ -133,13 +244,22 @@ class AnalyticsDashboard extends StatelessWidget {
               children: [
                 _DashboardHeader(r: r),
                 SizedBox(height: r.scale(24)),
-                _KPIRow(r: r),
+                _SectionTabs(
+                  r: r,
+                  sections: _sections,
+                  selectedIndex: _selectedSectionIndex,
+                  onSelected: _onSectionSelected,
+                ),
+                SizedBox(height: r.scale(24)),
+                _KPIRow(r: r, data: currentData),
                 SizedBox(height: r.scale(28)),
-                _SectionLabel(label: 'Resumen General', r: r),
+                _SectionLabel(
+                    label: 'Resumen de ${_sections[_selectedSectionIndex]}',
+                    r: r),
                 SizedBox(height: r.scale(16)),
-                _TopChartsRow(r: r),
+                _TopChartsRow(r: r, data: currentData),
                 SizedBox(height: r.scale(20)),
-                _BottomChartsRow(r: r),
+                _BottomChartsRow(r: r, data: currentData),
                 SizedBox(height: r.scale(24)),
               ],
             ),
@@ -150,14 +270,12 @@ class AnalyticsDashboard extends StatelessWidget {
   }
 }
 
-// ─── Header ──────────────────────────────────────────────────
 class _DashboardHeader extends StatelessWidget {
   final R r;
   const _DashboardHeader({required this.r});
 
   @override
   Widget build(BuildContext context) {
-    // En pantallas pequeñas apilamos verticalmente
     if (r.isSmall) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +322,7 @@ class _TitleBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Analisis',
+          'Análisis',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: r.scale(22),
@@ -299,7 +417,56 @@ class _GenerateReportButton extends StatelessWidget {
   }
 }
 
-// ─── Etiqueta de sección ──────────────────────────────────────
+class _SectionTabs extends StatelessWidget {
+  final R r;
+  final List<String> sections;
+  final int selectedIndex;
+  final Function(int) onSelected;
+
+  const _SectionTabs({
+    required this.r,
+    required this.sections,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(sections.length, (index) {
+          final isSelected = index == selectedIndex;
+          return GestureDetector(
+            onTap: () => onSelected(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: EdgeInsets.only(right: r.scale(10)),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.scale(16),
+                vertical: r.scale(8),
+              ),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.blue : AppColors.card,
+                borderRadius: BorderRadius.circular(8),
+                border: isSelected ? null : Border.all(color: AppColors.border),
+              ),
+              child: Text(
+                sections[index],
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: r.scale(13),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
 class _SectionLabel extends StatelessWidget {
   final String label;
   final R r;
@@ -318,10 +485,10 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ─── Fila de KPIs ────────────────────────────────────────────
 class _KPIRow extends StatelessWidget {
   final R r;
-  const _KPIRow({required this.r});
+  final StationAnalyticsData data;
+  const _KPIRow({required this.r, required this.data});
 
   Widget _buildCard(String title, String subtitle, String value, String unit,
       IconData icon, Color iconColor, Color iconBg) {
@@ -343,7 +510,7 @@ class _KPIRow extends StatelessWidget {
       _buildCard(
           'Producción',
           'Total producido',
-          '12,540',
+          data.produccionTotal,
           'unidades',
           Icons.bar_chart_rounded,
           AppColors.blue,
@@ -351,7 +518,7 @@ class _KPIRow extends StatelessWidget {
       _buildCard(
           'Tiempo Activo',
           'Disponibilidad',
-          '87.6%',
+          data.tiempoActivoPorcentaje,
           '',
           Icons.access_time_rounded,
           AppColors.green,
@@ -359,7 +526,7 @@ class _KPIRow extends StatelessWidget {
       _buildCard(
           'Fallas',
           'Total fallos',
-          '24',
+          data.fallasTotales,
           '',
           Icons.warning_amber_rounded,
           AppColors.red,
@@ -367,14 +534,13 @@ class _KPIRow extends StatelessWidget {
       _buildCard(
           'Consumo',
           'Energía utilizada',
-          '1,245',
+          data.consumoTotal,
           'kWh',
           Icons.bolt_rounded,
           AppColors.yellow,
           AppColors.yellow.withOpacity(0.15)),
     ];
 
-    // Pantallas pequeñas: cuadrícula 2×2
     if (r.isSmall) {
       return Column(
         children: [
@@ -397,7 +563,6 @@ class _KPIRow extends StatelessWidget {
       );
     }
 
-    // Pantallas medianas/grandes: fila única
     return Row(
       children: [
         Expanded(child: cards[0]),
@@ -450,7 +615,6 @@ class _KPICard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Texto
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +664,6 @@ class _KPICard extends StatelessWidget {
             ),
           ),
           SizedBox(width: r.scale(8)),
-          // Icono
           Container(
             width: iconSize,
             height: iconSize,
@@ -516,10 +679,10 @@ class _KPICard extends StatelessWidget {
   }
 }
 
-// ─── Fila superior de gráficas ────────────────────────────────
 class _TopChartsRow extends StatelessWidget {
   final R r;
-  const _TopChartsRow({required this.r});
+  final StationAnalyticsData data;
+  const _TopChartsRow({required this.r, required this.data});
 
   static List<FlSpot> _spotsFrom(List<double> values) =>
       List.generate(values.length, (i) => FlSpot(i.toDouble(), values[i]));
@@ -527,12 +690,12 @@ class _TopChartsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final charts = [
-      _BarChartCard(r: r),
+      _BarChartCard(r: r, data: data.produccion),
       _LineChartCard(
         r: r,
         title: 'Tiempo activo (%)',
         color: AppColors.green,
-        spots: _spotsFrom(DashboardData.tiempoActivo),
+        spots: _spotsFrom(data.tiempoActivo),
         maxY: 100,
         interval: 25,
       ),
@@ -540,13 +703,12 @@ class _TopChartsRow extends StatelessWidget {
         r: r,
         title: 'Fallas por día',
         color: AppColors.red,
-        spots: _spotsFrom(DashboardData.fallas),
+        spots: _spotsFrom(data.fallas),
         maxY: 15,
         interval: 5,
       ),
     ];
 
-    // Pantallas pequeñas: apiladas verticalmente
     if (r.isSmall) {
       return Column(
         children: [
@@ -559,7 +721,6 @@ class _TopChartsRow extends StatelessWidget {
       );
     }
 
-    // Pantallas medianas: 2 arriba + 1 abajo, o las 3 en fila si hay espacio
     if (r.isMedium) {
       return Column(
         children: [
@@ -579,7 +740,6 @@ class _TopChartsRow extends StatelessWidget {
       );
     }
 
-    // Pantallas grandes: fila única con 3 columnas
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -593,10 +753,10 @@ class _TopChartsRow extends StatelessWidget {
   }
 }
 
-// ─── Card: Gráfica de barras ──────────────────────────────────
 class _BarChartCard extends StatelessWidget {
   final R r;
-  const _BarChartCard({required this.r});
+  final List<double> data;
+  const _BarChartCard({required this.r, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -612,12 +772,12 @@ class _BarChartCard extends StatelessWidget {
             backgroundColor: Colors.transparent,
             maxY: 3500,
             barGroups: List.generate(
-              DashboardData.produccion.length,
+              data.length,
               (i) => BarChartGroupData(
                 x: i,
                 barRods: [
                   BarChartRodData(
-                    toY: DashboardData.produccion[i],
+                    toY: data[i],
                     color: AppColors.blue,
                     width: barWidth,
                     borderRadius:
@@ -680,7 +840,6 @@ class _BarChartCard extends StatelessWidget {
   }
 }
 
-// ─── Card: Gráfica de línea ───────────────────────────────────
 class _LineChartCard extends StatelessWidget {
   final R r;
   final String title;
@@ -784,20 +943,20 @@ class _LineChartCard extends StatelessWidget {
   }
 }
 
-// ─── Fila inferior de gráficas ────────────────────────────────
 class _BottomChartsRow extends StatelessWidget {
   final R r;
-  const _BottomChartsRow({required this.r});
+  final StationAnalyticsData data;
+  const _BottomChartsRow({required this.r, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final pie = _PieChartCard(r: r);
+    final pie = _PieChartCard(r: r, sections: data.pieData);
     final consumoCard = _LineChartCard(
       r: r,
       title: 'Consumo de energía (kWh)',
       color: AppColors.yellow,
-      spots: List.generate(DashboardData.consumo.length,
-          (i) => FlSpot(i.toDouble(), DashboardData.consumo[i])),
+      spots: List.generate(
+          data.consumo.length, (i) => FlSpot(i.toDouble(), data.consumo[i])),
       maxY: 750,
       interval: 250,
     );
@@ -815,25 +974,18 @@ class _BottomChartsRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: pie),
+        Expanded(flex: 2, child: pie),
         SizedBox(width: r.scale(16)),
-        Expanded(child: consumoCard),
+        Expanded(flex: 3, child: consumoCard),
       ],
     );
   }
 }
 
-// ─── Card: Gráfica de pastel ──────────────────────────────────
 class _PieChartCard extends StatelessWidget {
   final R r;
-  const _PieChartCard({required this.r});
-
-  static const _sections = [
-    _PieSection('Eléctrico', 40, AppColors.blue),
-    _PieSection('Neumático', 25, AppColors.yellow),
-    _PieSection('Mecánico', 20, AppColors.green),
-    _PieSection('Sensor', 15, AppColors.red),
-  ];
+  final List<_PieSection> sections;
+  const _PieChartCard({required this.r, required this.sections});
 
   @override
   Widget build(BuildContext context) {
@@ -846,7 +998,6 @@ class _PieChartCard extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(top: r.scale(8)),
         child: r.isSmall
-            // En móvil: pastel arriba, leyenda abajo
             ? Column(
                 children: [
                   SizedBox(
@@ -858,7 +1009,6 @@ class _PieChartCard extends StatelessWidget {
                   _buildLegendRow(),
                 ],
               )
-            // En tablet/desktop: pastel izquierda, leyenda derecha
             : Row(
                 children: [
                   SizedBox(
@@ -877,7 +1027,7 @@ class _PieChartCard extends StatelessWidget {
   PieChart _buildPie(double radius) {
     return PieChart(
       PieChartData(
-        sections: _sections
+        sections: sections
             .map((s) => PieChartSectionData(
                   value: s.value,
                   color: s.color,
@@ -895,7 +1045,7 @@ class _PieChartCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
-      children: _sections
+      children: sections
           .map((s) => Padding(
                 padding: EdgeInsets.only(bottom: r.scale(12)),
                 child: _LegendItem(section: s, r: r),
@@ -908,7 +1058,7 @@ class _PieChartCard extends StatelessWidget {
     return Wrap(
       spacing: r.scale(12),
       runSpacing: r.scale(8),
-      children: _sections.map((s) => _LegendItem(section: s, r: r)).toList(),
+      children: sections.map((s) => _LegendItem(section: s, r: r)).toList(),
     );
   }
 }
@@ -951,7 +1101,6 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-// ─── Wrapper genérico de card de gráfica ─────────────────────
 class _ChartCard extends StatelessWidget {
   final R r;
   final String title;

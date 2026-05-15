@@ -8,15 +8,15 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 // ── Paleta propia (nombres distintos a main.dart para evitar conflictos) ──
-const Color kBg     = Color(0xFF081014);
-const Color kPanel  = Color(0xFF11222C);
-const Color kCyanN  = Color(0xFF00EAFF);
+const Color kBg = Color(0xFF081014);
+const Color kPanel = Color(0xFF11222C);
+const Color kCyanN = Color(0xFF00EAFF);
 const Color kGreenN = Color(0xFF00FF88);
-const Color kRedN   = Color(0xFFFF3366);
-const Color kBorderN= Color(0xFF1A3644);
-const Color kText   = Color(0xFFC5D1D8);
-const Color kAudit  = Color(0xFFFFAA00);
-const Color kDark   = Color(0xFF0C1820);
+const Color kRedN = Color(0xFFFF3366);
+const Color kBorderN = Color(0xFF1A3644);
+const Color kText = Color(0xFFC5D1D8);
+const Color kAudit = Color(0xFFFFAA00);
+const Color kDark = Color(0xFF0C1820);
 
 // ── Modelos internos (privados a este archivo) ────────────────────────────
 enum _NLogType { info, audit, error }
@@ -59,9 +59,9 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   String _role = 'Ingeniero';
   String _mode = 'manual';
   String _conn = 'sim';
-  bool   _isCycleRunning = false;
+  bool _isCycleRunning = false;
   double _pressure = 1.0;
-  int    _piezas   = 0;
+  int _piezas = 0;
 
   final List<double> _chartData = List.filled(40, 1.0);
 
@@ -85,8 +85,8 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   final List<_NLogEntry> _logs = [];
   final ScrollController _logScroll = ScrollController();
 
-  _SensorModel   _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
-  _ActuatorModel _act   (String id) => _actuators.firstWhere((a) => a.id == id);
+  _SensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
+  _ActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
   bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
 
   @override
@@ -104,7 +104,8 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
 
   void _updateClock() {
     final n = DateTime.now();
-    _clock = '${n.hour.toString().padLeft(2,'0')}:${n.minute.toString().padLeft(2,'0')}:${n.second.toString().padLeft(2,'0')}';
+    _clock =
+        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
   }
 
   void _simulatePressure() {
@@ -127,8 +128,9 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   }
 
   void _logAudit(String message, _NLogType type) {
-    final n    = DateTime.now();
-    final time = '${n.hour.toString().padLeft(2,'0')}:${n.minute.toString().padLeft(2,'0')}:${n.second.toString().padLeft(2,'0')}';
+    final n = DateTime.now();
+    final time =
+        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
     setState(() => _logs.add(_NLogEntry(time, _role, message, type)));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScroll.hasClients) {
@@ -163,17 +165,22 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   void _toggleActuator(String id, bool val) {
     setState(() => _act(id).on = val);
     if (!_isCycleRunning) {
-      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
+      _logAudit(
+          'Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
     }
   }
 
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
     if (_pressure < 2.5) {
-      _logAudit('Falla de arranque: Presión neumática insuficiente.', _NLogType.error);
+      _logAudit('Falla de arranque: Presión neumática insuficiente.',
+          _NLogType.error);
       return;
     }
-    setState(() { _isCycleRunning = true; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = true;
+      _updatePermissions();
+    });
     _logAudit('INICIANDO PRODUCCIÓN AUTOMÁTICA...', _NLogType.info);
     try {
       _toggleActuator('V1', true);
@@ -200,18 +207,23 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
         _sensor('P1').active = true;
         _piezas++;
       });
-      _logAudit('CICLO EXITOSO. Pieza terminada y contabilizada.', _NLogType.info);
+      _logAudit(
+          'CICLO EXITOSO. Pieza terminada y contabilizada.', _NLogType.info);
     } catch (_) {
       _logAudit('Error en la secuencia automática.', _NLogType.error);
     }
-    setState(() { _isCycleRunning = false; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = false;
+      _updatePermissions();
+    });
   }
 
   void _triggerEmergency() {
     for (final a in _actuators) {
       setState(() => a.on = false);
     }
-    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...', _NLogType.error);
+    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...',
+        _NLogType.error);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -232,36 +244,31 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: kBg,
-    body: Padding(
-      padding: const EdgeInsets.all(12),
-      child: SingleChildScrollView( // ✅ TODO SE MUEVE
-        child: Column(
-  crossAxisAlignment: CrossAxisAlignment.stretch,
-  children: [
-    _buildHeader(),
-    const SizedBox(height: 16),
-
-    _buildTopBar(),
-    const SizedBox(height: 10),
-
-    _buildRow1(),
-    const SizedBox(height: 10),
-    _buildRow2(),
-    const SizedBox(height: 8),
-  ],
-),
-
-
-
-
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kBg,
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          // ✅ TODO SE MUEVE
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildTopBar(),
+              const SizedBox(height: 10),
+              _buildRow1(),
+              const SizedBox(height: 10),
+              _buildRow2(),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
@@ -273,8 +280,10 @@ Widget build(BuildContext context) {
           children: [
             const Text('CENTRO NEUMÁTICO SCADA',
                 style: TextStyle(
-                    color: kCyanN, fontSize: 20,
-                    fontWeight: FontWeight.bold, letterSpacing: 1.4)),
+                    color: kCyanN,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.4)),
             Text(_clock,
                 style: const TextStyle(
                     color: kText, fontSize: 14, fontFamily: 'monospace')),
@@ -291,40 +300,40 @@ Widget build(BuildContext context) {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Wrap(
-          spacing: 16, runSpacing: 10,
+          spacing: 16,
+          runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-
-
-
-
-
-
             /* _labeledSelect('Rol:', _role, {
               'Ingeniero': 'Ingeniero (Control Total)',
               'Operador':  'Operador (Auto/Lectura)',
             }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
-              'auto':   'Automático',
-            }, (v) { setState(() => _mode = v!); _updatePermissions(); }),
-           /*  _labeledSelect('Conexión:', _conn, {
+              'auto': 'Automático',
+            }, (v) {
+              setState(() => _mode = v!);
+              _updatePermissions();
+            }),
+            /*  _labeledSelect('Conexión:', _conn, {
               'sim': 'Simulación Local',
               'ws':  'Hardware Real (WebSocket)',
             }, (v) { setState(() => _conn = v!); }), */
             ElevatedButton(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor:         kGreenN,
+                backgroundColor: kGreenN,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                foregroundColor:         Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                foregroundColor: Colors.black,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                textStyle:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               child: const Text('Iniciar Ciclo Automático'),
             ),
-           /*  ElevatedButton(
+            /*  ElevatedButton(
               onPressed: () => _logAudit('Auditoría exportada por el usuario.', _NLogType.audit),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kAudit,
@@ -340,13 +349,8 @@ Widget build(BuildContext context) {
         ),
       );
 
-
-
-
-
-
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
-      ValueChanged<String?> onChanged) =>
+          ValueChanged<String?> onChanged) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
         Text(lbl, style: const TextStyle(color: kText, fontSize: 13)),
         const SizedBox(width: 6),
@@ -365,7 +369,8 @@ Widget build(BuildContext context) {
               icon: const Icon(Icons.arrow_drop_down, color: kCyanN, size: 18),
               isDense: true,
               items: items.entries
-                  .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .map((e) =>
+                      DropdownMenuItem(value: e.key, child: Text(e.value)))
                   .toList(),
               onChanged: onChanged,
             ),
@@ -408,26 +413,44 @@ Widget build(BuildContext context) {
         ),
         child: Stack(children: [
           const Positioned(
-            top: 10, right: 10,
+            top: 10,
+            right: 10,
             child: Text('Gemelo Digital 2D',
                 style: TextStyle(
                     color: kCyanN, fontWeight: FontWeight.bold, fontSize: 13)),
           ),
-          Positioned(top: 20,  left: 20,  child: _dtPart('M1', 'Compresor\n(M1)',              w: 80,  h: 80,  circle: true)),
-          Positioned(top: 100, left: 150, child: _dtPart('V1', 'V1',                            w: 40,  h: 40)),
-          Positioned(top: 150, left: 150, child: _dtPart('M3', 'Banda Transportadora (M3)',     w: 200, h: 40)),
-          Positioned(top: 60,  right: 80, child: _dtPart('V3', 'V3',                            w: 40,  h: 40)),
-          Positioned(top: 120, right: 50, child: _dtPart('M2', 'Mesa\n(M2)',                    w: 100, h: 100, circle: true)),
-          Positioned(top: 230, right: 80, child: _dtPart('V4', 'V4',                            w: 40,  h: 40)),
+          Positioned(
+              top: 20,
+              left: 20,
+              child:
+                  _dtPart('M1', 'Compresor\n(M1)', w: 80, h: 80, circle: true)),
+          Positioned(
+              top: 100, left: 150, child: _dtPart('V1', 'V1', w: 40, h: 40)),
+          Positioned(
+              top: 150,
+              left: 150,
+              child: _dtPart('M3', 'Banda Transportadora (M3)', w: 200, h: 40)),
+          Positioned(
+              top: 60, right: 80, child: _dtPart('V3', 'V3', w: 40, h: 40)),
+          Positioned(
+              top: 120,
+              right: 50,
+              child: _dtPart('M2', 'Mesa\n(M2)', w: 100, h: 100, circle: true)),
+          Positioned(
+              top: 230, right: 80, child: _dtPart('V4', 'V4', w: 40, h: 40)),
         ]),
       );
 
-  Widget _dtPart(String id, String label, {required double w, required double h, bool circle = false}) {
+  Widget _dtPart(String id, String label,
+      {required double w, required double h, bool circle = false}) {
     bool active = false;
-    try { active = _actuators.firstWhere((a) => a.id == id).on; } catch (_) {}
+    try {
+      active = _actuators.firstWhere((a) => a.id == id).on;
+    } catch (_) {}
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: w, height: h,
+      width: w,
+      height: h,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? kGreenN : const Color(0xFF333333),
@@ -457,7 +480,7 @@ Widget build(BuildContext context) {
 
   Widget _sensorRow(_SensorModel s) {
     final bool isEmergency = s.id == 'S2';
-    final Color ledColor   = isEmergency && s.active
+    final Color ledColor = isEmergency && s.active
         ? kRedN
         : (!isEmergency && s.active)
             ? kGreenN
@@ -473,15 +496,21 @@ Widget build(BuildContext context) {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(children: [
-          Expanded(child: Text(s.label, style: const TextStyle(color: kText, fontSize: 12))),
+          Expanded(
+              child: Text(s.label,
+                  style: const TextStyle(color: kText, fontSize: 12))),
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 14, height: 14,
+            width: 14,
+            height: 14,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: ledColor,
               boxShadow: s.active
-                  ? [BoxShadow(color: ledColor.withOpacity(0.8), blurRadius: 10)]
+                  ? [
+                      BoxShadow(
+                          color: ledColor.withOpacity(0.8), blurRadius: 10)
+                    ]
                   : null,
             ),
           ),
@@ -520,14 +549,16 @@ Widget build(BuildContext context) {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(children: [
-          Expanded(child: Text(a.label, style: const TextStyle(color: kText, fontSize: 12))),
+          Expanded(
+              child: Text(a.label,
+                  style: const TextStyle(color: kText, fontSize: 12))),
           Transform.scale(
             scale: 0.75,
             child: Switch(
               value: a.on,
               onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
-              activeColor:        Colors.white,
-              activeTrackColor:   kCyanN,
+              activeColor: Colors.white,
+              activeTrackColor: kCyanN,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: const Color(0xFF333333),
             ),
@@ -556,7 +587,9 @@ Widget build(BuildContext context) {
                   color: l.color,
                   fontSize: 11,
                   fontFamily: 'monospace',
-                  fontWeight: l.type == _NLogType.audit ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: l.type == _NLogType.audit
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                 ),
               );
             },
@@ -591,7 +624,9 @@ Widget build(BuildContext context) {
                   border: Border(bottom: BorderSide(color: kBorderN))),
               child: Text(title,
                   style: const TextStyle(
-                      color: kCyanN, fontSize: 13, fontWeight: FontWeight.bold)),
+                      color: kCyanN,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             child,
@@ -609,7 +644,7 @@ class _ChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const double maxY = 6;
     final gridPaint = Paint()
-      ..color      = const Color(0xFF1A3644)
+      ..color = const Color(0xFF1A3644)
       ..strokeWidth = 0.5;
 
     for (int i = 0; i <= 6; i++) {
@@ -655,11 +690,11 @@ class _ChartPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color       = const Color(0xFF00EAFF)
+        ..color = const Color(0xFF00EAFF)
         ..strokeWidth = 2
-        ..style       = PaintingStyle.stroke
-        ..strokeCap   = StrokeCap.round
-        ..strokeJoin  = StrokeJoin.round,
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
     );
   }
 

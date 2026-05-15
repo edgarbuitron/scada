@@ -11,15 +11,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 // ── Paleta ────────────────────────────────────────────────────────────────
-const Color _kBg     = Color(0xFF081014);
-const Color _kPanel  = Color(0xFF11222C);
-const Color _kCyan   = Color(0xFF00EAFF);
-const Color _kGreen  = Color(0xFF00FF88);
-const Color _kRed    = Color(0xFFFF3366);
+const Color _kBg = Color(0xFF081014);
+const Color _kPanel = Color(0xFF11222C);
+const Color _kCyan = Color(0xFF00EAFF);
+const Color _kGreen = Color(0xFF00FF88);
+const Color _kRed = Color(0xFFFF3366);
 const Color _kBorder = Color(0xFF1A3644);
-const Color _kText   = Color(0xFFC5D1D8);
-const Color _kAudit  = Color(0xFFFFAA00);
-const Color _kDark   = Color(0xFF0C1820);
+const Color _kText = Color(0xFFC5D1D8);
+const Color _kAudit = Color(0xFFFFAA00);
+const Color _kDark = Color(0xFF0C1820);
 const Color _kOrange = Color(0xFFFFAA00); // color característico de prensado
 
 // ── Estados del ciclo (fiel al proceso real TMPUM24-A) ────────────────────
@@ -83,8 +83,8 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   String _conn = 'sim';
 
   bool _isCycleRunning = false;
-  int  _currentState   = 0;
-  int  _piezas         = 0;
+  int _currentState = 0;
+  int _piezas = 0;
 
   // ── Sensores (Engine Inputs — TMPUM24-A página 4) ─────────────────────
   final List<_PSensorModel> _sensors = [
@@ -106,11 +106,11 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
     _PActuatorModel('RLY04', 'RLY04', 'Conveyor Belt → Backward (M2)'),
   ];
 
-  final List<_PLogEntry>   _logs      = [];
-  final ScrollController   _logScroll = ScrollController();
+  final List<_PLogEntry> _logs = [];
+  final ScrollController _logScroll = ScrollController();
 
-  _PSensorModel   _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
-  _PActuatorModel _act   (String id) => _actuators.firstWhere((a) => a.id == id);
+  _PSensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
+  _PActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
 
   bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
 
@@ -148,8 +148,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScroll.hasClients) {
         _logScroll.animateTo(_logScroll.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut);
+            duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
       }
     });
   }
@@ -173,8 +172,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
     }
     final s = _sensor(id);
     setState(() => s.active = !s.active);
-    _log(
-        'Simulación Manual: Sensor $id → ${s.active ? 'ACTIVO' : 'LIBRE'}',
+    _log('Simulación Manual: Sensor $id → ${s.active ? 'ACTIVO' : 'LIBRE'}',
         _PLogType.audit);
   }
 
@@ -226,9 +224,9 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
       // ─── EST2: Pieza llega a la prensa (P2 activa) ───────────────────
       setState(() {
         _currentState = 2;
-        _act('RLY03').on = false;   // para banda
+        _act('RLY03').on = false; // para banda
         _sensor('P1').active = false; // ya salió de entrada
-        _sensor('P2').active = true;  // llegó a prensa
+        _sensor('P2').active = true; // llegó a prensa
       });
       _log('EST2 · P2: Pieza presente en prensa. Deteniendo banda.',
           _PLogType.info);
@@ -248,8 +246,8 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
       // ─── EST3: Punzón llega al tope inferior (S2 activo) ─────────────
       setState(() {
         _currentState = 3;
-        _sensor('S2').active = true;  // punzón en posición de trabajo
-        _act('RLY02').on = false;     // para el motor de bajada
+        _sensor('S2').active = true; // punzón en posición de trabajo
+        _act('RLY02').on = false; // para el motor de bajada
       });
       _log('EST3 · S2: Punzón en posición de TRABAJO. Deteniendo bajada.',
           _PLogType.info);
@@ -270,7 +268,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
       setState(() {
         _currentState = 4;
         _sensor('S1').active = true; // punzón de vuelta en home
-        _act('RLY01').on = false;    // para el motor de subida
+        _act('RLY01').on = false; // para el motor de subida
       });
       _log('EST4 · S1: Punzón en posición HOME. Deteniendo subida.',
           _PLogType.info);
@@ -300,7 +298,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
 
     setState(() {
       _isCycleRunning = false;
-      _currentState   = 0;
+      _currentState = 0;
       _updatePermissions();
     });
   }
@@ -311,7 +309,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
       setState(() => a.on = false);
     }
     _isCycleRunning = false;
-    _currentState   = 0;
+    _currentState = 0;
     _log('¡PARO DE EMERGENCIA ACTIVADO! Todos los actuadores apagados.',
         _PLogType.error);
     showDialog(
@@ -336,29 +334,29 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   @override
   Widget build(BuildContext context) {
     // CÓDIGO CORREGIDO
-return Scaffold(
-  backgroundColor: _kBg,
-  body: SafeArea(
-    child: SingleChildScrollView( // El scroll ahora envuelve a TODO el Column
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildHeader(), // <--- AHORA ESTÁ ADENTRO
-          const SizedBox(height: 16),
-          _buildTopBar(),
-          const SizedBox(height: 10),
-          _buildRow1(),
-          const SizedBox(height: 10),
-          _buildRow2(),
-          const SizedBox(height: 10),
-          
-        ],
+    return Scaffold(
+      backgroundColor: _kBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          // El scroll ahora envuelve a TODO el Column
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(), // <--- AHORA ESTÁ ADENTRO
+              const SizedBox(height: 16),
+              _buildTopBar(),
+              const SizedBox(height: 10),
+              _buildRow1(),
+              const SizedBox(height: 10),
+              _buildRow2(),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   // ── Header ────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
@@ -378,7 +376,7 @@ return Scaffold(
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4)),
                 //Text('Art. No. TMPUM24-A · Punching Machine 24V',
-                    //style: TextStyle(color: _kText, fontSize: 11)),
+                //style: TextStyle(color: _kText, fontSize: 11)),
               ],
             ),
             Text(_clock,
@@ -401,32 +399,38 @@ return Scaffold(
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-           /*  _labeledSelect('Rol:', _role, {
+            /*  _labeledSelect('Rol:', _role, {
               'Ingeniero': 'Ingeniero (Control Total)',
               'Operador':  'Operador (Auto/Lectura)',
             }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
-              'auto':   'Automático',
-            }, (v) { setState(() => _mode = v!); _updatePermissions(); }),
-           /*  _labeledSelect('Conexión:', _conn, {
+              'auto': 'Automático',
+            }, (v) {
+              setState(() => _mode = v!);
+              _updatePermissions();
+            }),
+            /*  _labeledSelect('Conexión:', _conn, {
               'sim': 'Simulación Local',
               'ws':  'Hardware Real (WebSocket)',
             }, (v) { setState(() => _conn = v!); }), */
             ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
-              icon: Icon(_isCycleRunning ? Icons.stop_circle : Icons.play_circle,
+              icon: Icon(
+                  _isCycleRunning ? Icons.stop_circle : Icons.play_circle,
                   size: 18),
               label: Text(
                 _isCycleRunning ? 'EJECUTANDO...' : '▶ INICIAR CICLO AUTO',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:         _kOrange,
-                foregroundColor:         Colors.black,
+                backgroundColor: _kOrange,
+                foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
             ElevatedButton.icon(
@@ -439,7 +443,8 @@ return Scaffold(
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
             _kpiBox('Piezas Prensadas', '$_piezas'),
@@ -448,7 +453,7 @@ return Scaffold(
       );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
-      ValueChanged<String?> onChanged) =>
+          ValueChanged<String?> onChanged) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
         Text(lbl, style: const TextStyle(color: _kText, fontSize: 13)),
         const SizedBox(width: 6),
@@ -464,10 +469,12 @@ return Scaffold(
               value: val,
               dropdownColor: _kPanel,
               style: const TextStyle(color: _kOrange, fontSize: 12),
-              icon: const Icon(Icons.arrow_drop_down, color: _kOrange, size: 18),
+              icon:
+                  const Icon(Icons.arrow_drop_down, color: _kOrange, size: 18),
               isDense: true,
               items: items.entries
-                  .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .map((e) =>
+                      DropdownMenuItem(value: e.key, child: Text(e.value)))
                   .toList(),
               onChanged: onChanged,
             ),
@@ -542,13 +549,6 @@ return Scaffold(
 
  */
 
-
-
-
-
-
-
-
   // ── Row 1: Gemelo Digital + Sensores ─────────────────────────────────
   Widget _buildRow1() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,53 +571,64 @@ return Scaffold(
         ),
         child: Stack(children: [
           const Positioned(
-            top: 10, right: 10,
+            top: 10,
+            right: 10,
             child: Text('Gemelo Digital 2D — TMPUM24-A',
                 style: TextStyle(
-                    color: _kOrange, fontWeight: FontWeight.bold, fontSize: 12)),
+                    color: _kOrange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
           ),
 
           // ── Banda transportadora M2 (base) ────────────────────────
           Positioned(
-            bottom: 40, left: 30,
+            bottom: 40,
+            left: 30,
             child: _dtRect(
               'M2\nBanda\nTransportadora',
               _act('RLY03').on || _act('RLY04').on,
               _act('RLY04').on ? _kAudit : _kCyan,
-              w: 280, h: 40,
+              w: 280,
+              h: 40,
             ),
           ),
 
           // ── Indicador dirección de banda ──────────────────────────
           if (_act('RLY03').on || _act('RLY04').on)
             Positioned(
-              bottom: 48, left: 140,
+              bottom: 48,
+              left: 140,
               child: Text(
                 _act('RLY03').on ? '→ Forward' : '← Backward',
                 style: TextStyle(
                   color: _act('RLY03').on ? _kCyan : _kAudit,
-                  fontSize: 11, fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
 
           // ── Sensor P1 (entrada de banda) ──────────────────────────
           Positioned(
-            bottom: 82, left: 38,
+            bottom: 82,
+            left: 38,
             child: _sensorDot('P1', _sensor('P1').active),
           ),
 
           // ── Sensor P2 (pieza en zona de prensado) ─────────────────
           Positioned(
-            bottom: 82, left: 158,
+            bottom: 82,
+            left: 158,
             child: _sensorDot('P2', _sensor('P2').active),
           ),
 
           // ── Cuerpo de la prensa (columna vertical) ────────────────
           Positioned(
-            bottom: 78, left: 150,
+            bottom: 78,
+            left: 150,
             child: Container(
-              width: 40, height: 180,
+              width: 40,
+              height: 180,
               decoration: BoxDecoration(
                 color: const Color(0xFF1A2A1A),
                 border: Border.all(color: const Color(0xFF334433)),
@@ -636,7 +647,7 @@ return Scaffold(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
             bottom: _act('RLY02').on
-                ? 82  // bajando → en trabajo
+                ? 82 // bajando → en trabajo
                 : _act('RLY01').on || _sensor('S1').active
                     ? 200 // en home
                     : 145, // posición media
@@ -645,13 +656,15 @@ return Scaffold(
               'M1\nPunzón',
               _act('RLY01').on || _act('RLY02').on,
               _act('RLY02').on ? _kOrange : _kGreen,
-              w: 70, h: 55,
+              w: 70,
+              h: 55,
             ),
           ),
 
           // ── Sensor S1 (home) ──────────────────────────────────────
           Positioned(
-            top: 60, left: 220,
+            top: 60,
+            left: 220,
             child: Column(children: [
               _sensorDot('S1', _sensor('S1').active),
               const SizedBox(height: 2),
@@ -661,24 +674,27 @@ return Scaffold(
 
           // ── Sensor S2 (trabajo/abajo) ─────────────────────────────
           Positioned(
-            bottom: 92, left: 220,
+            bottom: 92,
+            left: 220,
             child: Column(children: [
               _sensorDot('S2', _sensor('S2').active),
               const SizedBox(height: 2),
-              const Text('WORK', style: TextStyle(color: _kOrange, fontSize: 8)),
+              const Text('WORK',
+                  style: TextStyle(color: _kOrange, fontSize: 8)),
             ]),
           ),
 
           // ── Indicadores de relés (esquina inferior derecha) ───────
           Positioned(
-            top: 14, left: 14,
+            top: 14,
+            left: 14,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _relayIndicator('RLY01', '↑ Home',  _act('RLY01').on),
-                _relayIndicator('RLY02', '↓ Work',  _act('RLY02').on),
-                _relayIndicator('RLY03', '→ Fwd',   _act('RLY03').on),
-                _relayIndicator('RLY04', '← Bwd',   _act('RLY04').on),
+                _relayIndicator('RLY01', '↑ Home', _act('RLY01').on),
+                _relayIndicator('RLY02', '↓ Work', _act('RLY02').on),
+                _relayIndicator('RLY03', '→ Fwd', _act('RLY03').on),
+                _relayIndicator('RLY04', '← Bwd', _act('RLY04').on),
               ],
             ),
           ),
@@ -689,7 +705,8 @@ return Scaffold(
       {required double w, required double h}) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: w, height: h,
+      width: w,
+      height: h,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? color.withOpacity(0.22) : const Color(0xFF1A2233),
@@ -712,7 +729,8 @@ return Scaffold(
 
   Widget _sensorDot(String id, bool active) => AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 30, height: 30,
+        width: 30,
+        height: 30,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: active ? _kGreen.withOpacity(0.2) : Colors.transparent,
@@ -736,7 +754,8 @@ return Scaffold(
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 10, height: 10,
+            width: 10,
+            height: 10,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: active ? _kOrange : const Color(0xFF334455),
@@ -796,13 +815,16 @@ return Scaffold(
             ),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 14, height: 14,
+              width: 14,
+              height: 14,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: s.active ? _kGreen : const Color(0xFF334455),
                 boxShadow: s.active
-                    ? [BoxShadow(
-                        color: _kGreen.withOpacity(0.7), blurRadius: 8)]
+                    ? [
+                        BoxShadow(
+                            color: _kGreen.withOpacity(0.7), blurRadius: 8)
+                      ]
                     : null,
               ),
             ),
@@ -850,11 +872,10 @@ return Scaffold(
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: a.on
-              ? _kOrange.withOpacity(0.08)
-              : Colors.black.withOpacity(0.3),
-          border: Border.all(
-              color: a.on ? _kOrange.withOpacity(0.5) : _kBorder),
+          color:
+              a.on ? _kOrange.withOpacity(0.08) : Colors.black.withOpacity(0.3),
+          border:
+              Border.all(color: a.on ? _kOrange.withOpacity(0.5) : _kBorder),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(children: [
@@ -878,8 +899,8 @@ return Scaffold(
             child: Switch(
               value: a.on,
               onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
-              activeColor:        Colors.white,
-              activeTrackColor:   _kOrange,
+              activeColor: Colors.white,
+              activeTrackColor: _kOrange,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: const Color(0xFF333333),
             ),
@@ -887,18 +908,8 @@ return Scaffold(
         ]),
       );
 
-
-
-
-
-
-
-
-
-
-
   // ── Info del proceso (referencia al manual) ───────────────────────────
- /*  Widget _buildProcessInfo() => _panel(
+  /*  Widget _buildProcessInfo() => _panel(
         title: 'Referencia del Proceso — TMPUM24-A',
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1007,17 +1018,6 @@ return Scaffold(
       );
  */
 
-
-
-
-
-
-
-
-
-
-
-
   // ── Panel wrapper ─────────────────────────────────────────────────────
   Widget _panel({
     required String title,
@@ -1035,14 +1035,12 @@ return Scaffold(
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize:
-              height != null ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: height != null ? MainAxisSize.max : MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.only(bottom: 8),
               decoration: const BoxDecoration(
-                  border:
-                      Border(bottom: BorderSide(color: _kBorder))),
+                  border: Border(bottom: BorderSide(color: _kBorder))),
               child: Text(title,
                   style: TextStyle(
                       color: titleColor,

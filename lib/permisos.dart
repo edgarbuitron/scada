@@ -145,158 +145,146 @@ class _PermisosScreenState extends State<PermisosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
-    
-    
     return GestureDetector(
-  onTap: () => Navigator.pop(context), // cerrar tocando afuera
-  child: Material(
-    color: Colors.transparent,
-    child: Center(
-      child: GestureDetector(
-        onTap: () {},
-
-
-
-        child: Container(
-          width: 440,
-          constraints: const BoxConstraints(maxHeight: 620),
-          decoration: BoxDecoration(
-            color: kCard,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: kBorder),
-          ),
-
-
-
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Permisos del usuario',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: kText,
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'Configurar permisos para: Carlos Ruiz',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: kMuted2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+      onTap: () => Navigator.pop(context), // cerrar tocando afuera
+      child: Material(
+        color: Colors.transparent,
+        child: Center(
+          child: GestureDetector(
+            onTap: () {},
+            child: Container(
+              width: 440,
+              constraints: const BoxConstraints(maxHeight: 620),
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: kBorder),
               ),
-
-              const SizedBox(height: 20),
-
-              // Tabla
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: kCardDark,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: kBorder),
-                        ),
-                        child: Column(
-                          children: [
-                            _tableHeader(),
-                            const Divider(height: 1, color: kBorder),
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _modulos.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1, color: kBorder),
-                              itemBuilder: (_, index) =>
-                                  _moduloRow(_modulos[index]),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _selectAll,
-                            onChanged: _toggleSelectAll,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Permisos del usuario',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: kText,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Configurar permisos para: Carlos Ruiz',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: kMuted2,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Seleccionar todo',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: kText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
 
-              const Divider(height: 1, color: kBorder),
+                  const SizedBox(height: 20),
 
-              // Botones
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: kText,
-                          side: const BorderSide(color: kBorder),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onPressed: () {},
-                        child: const Text('Cancelar'),
+                  // Tabla
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: kCardDark,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: kBorder),
+                            ),
+                            child: Column(
+                              children: [
+                                _tableHeader(),
+                                const Divider(height: 1, color: kBorder),
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _modulos.length,
+                                  separatorBuilder: (_, __) =>
+                                      const Divider(height: 1, color: kBorder),
+                                  itemBuilder: (_, index) =>
+                                      _moduloRow(_modulos[index]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectAll,
+                                onChanged: _toggleSelectAll,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Seleccionar todo',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: kText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kBlue,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+
+                  const Divider(height: 1, color: kBorder),
+
+                  // Botones
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kText,
+                              side: const BorderSide(color: kBorder),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () {},
+                            child: const Text('Cancelar'),
+                          ),
                         ),
-                        onPressed: () {},
-                        child: const Text('Guardar permisos'),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kBlue,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () {},
+                            child: const Text('Guardar permisos'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
     );
   }
 

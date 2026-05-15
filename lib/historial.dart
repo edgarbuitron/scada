@@ -48,11 +48,8 @@ class LogsDashboard extends StatelessWidget {
                       style: TextStyle(color: Colors.grey[400]),
                     ),
                     const SizedBox(height: 25),
-
                     const FiltersSection(),
-
                     const SizedBox(height: 25),
-
                     Row(
                       children: const [
                         Expanded(
@@ -88,9 +85,7 @@ class LogsDashboard extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 25),
-
                     const LogsTable(),
                   ],
                 ),
@@ -130,7 +125,6 @@ class Sidebar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 40),
-
           menuItem(Icons.dashboard, "Dashboard"),
           menuItem(Icons.memory, "Maquetas"),
           menuItem(Icons.analytics, "Monitoreo"),
@@ -138,9 +132,7 @@ class Sidebar extends StatelessWidget {
           menuItem(Icons.warning_amber, "Alertas"),
           menuItem(Icons.settings, "Configuración"),
           menuItem(Icons.cloud, "Cloud"),
-
           const Spacer(),
-
           const Padding(
             padding: EdgeInsets.all(20),
             child: Row(

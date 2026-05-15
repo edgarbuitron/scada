@@ -10,15 +10,15 @@ import 'package:flutter/material.dart';
 //void main() => runApp(const ScadaMaquinadosScreen());
 
 // ── Paleta ────────────────────────────────────────────────
-const Color kBg      = Color(0xFF081014);
-const Color kPanel   = Color(0xFF11222C);
-const Color kCyan    = Color(0xFF00EAFF);
-const Color kGreen   = Color(0xFF00FF88);
-const Color kRed     = Color(0xFFFF3366);
-const Color kBorder  = Color(0xFF1A3644);
-const Color kText    = Color(0xFFC5D1D8);
-const Color kAudit   = Color(0xFFFFAA00);
-const Color kDark    = Color(0xFF0C1820);
+const Color kBg = Color(0xFF081014);
+const Color kPanel = Color(0xFF11222C);
+const Color kCyan = Color(0xFF00EAFF);
+const Color kGreen = Color(0xFF00FF88);
+const Color kRed = Color(0xFFFF3366);
+const Color kBorder = Color(0xFF1A3644);
+const Color kText = Color(0xFFC5D1D8);
+const Color kAudit = Color(0xFFFFAA00);
+const Color kDark = Color(0xFF0C1820);
 const Color kMachine = Color(0xFF00FF88); // verde para maquinados
 
 // ── App ───────────────────────────────────────────────────
@@ -77,7 +77,7 @@ class ActuatorModel {
 const List<String> kEstados = [
   'Sin iniciar',
   'EST1 · Pieza nueva detectada en P1',
-  'EST2 · Pieza en P2 · Empujador 1 activado', 
+  'EST2 · Pieza en P2 · Empujador 1 activado',
   'EST3 · R1 en reposo · Avanzando a fresadora',
   'EST4 · Pieza en fresadora (P3) · Fresando',
   'EST5 · Pieza en taladradora (P4) · Taladrando',
@@ -89,7 +89,8 @@ const List<String> kEstados = [
 class ScadaMaquinadosDashboard extends StatefulWidget {
   const ScadaMaquinadosDashboard({super.key});
   @override
-  State<ScadaMaquinadosDashboard> createState() => _ScadaMaquinadosDashboardState();
+  State<ScadaMaquinadosDashboard> createState() =>
+      _ScadaMaquinadosDashboardState();
 }
 
 class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
@@ -140,7 +141,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(_updateClock);
     });
-    _logAudit('Sistema iniciado · Centro de Maquinados TMINL24-A', LogType.info);
+    _logAudit(
+        'Sistema iniciado · Centro de Maquinados TMINL24-A', LogType.info);
     _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
     // R1 y R2 inician en home (activos)
     _sensor('R1').active = true;
@@ -204,20 +206,32 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
 
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
-    setState(() { _isCycleRunning = true; _currentState = 0; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = true;
+      _currentState = 0;
+      _updatePermissions();
+    });
     _logAudit('INICIANDO CICLO AUTOMÁTICO DE MAQUINADOS...', LogType.info);
 
     try {
       // EST1: P1 detectado → M1 banda entrada
-      setState(() { _currentState = 1; _sensor('P1').active = true; });
-      _logAudit('EST1 · P1 detectado · M1 enciende banda entrada', LogType.info);
+      setState(() {
+        _currentState = 1;
+        _sensor('P1').active = true;
+      });
+      _logAudit(
+          'EST1 · P1 detectado · M1 enciende banda entrada', LogType.info);
       _toggleActuator('M1', true);
       await Future.delayed(const Duration(seconds: 2));
       setState(() => _sensor('P1').active = false);
 
       // EST2: P2 detectado → M1 apaga, M2 empuja
-      setState(() { _currentState = 2; _sensor('P2').active = true; });
-      _logAudit('EST2 · P2 detectado · M1 apaga · M2 empuja pieza', LogType.info);
+      setState(() {
+        _currentState = 2;
+        _sensor('P2').active = true;
+      });
+      _logAudit(
+          'EST2 · P2 detectado · M1 apaga · M2 empuja pieza', LogType.info);
       _toggleActuator('M1', false);
       await Future.delayed(const Duration(milliseconds: 500));
       _toggleActuator('M2', true);
@@ -226,22 +240,32 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       await Future.delayed(const Duration(seconds: 2));
 
       // EST3: R1 detectado → M2 apaga, M3 mueve banda 2
-      setState(() { _currentState = 3; _sensor('P2').active = false; });
-      _logAudit('EST3 · R1 en reposo · M2 apaga · M3 banda 2 activa', LogType.info);
+      setState(() {
+        _currentState = 3;
+        _sensor('P2').active = false;
+      });
+      _logAudit(
+          'EST3 · R1 en reposo · M2 apaga · M3 banda 2 activa', LogType.info);
       _toggleActuator('M2', false);
       setState(() => _sensor('R1').active = true);
       await Future.delayed(const Duration(milliseconds: 500));
       _toggleActuator('M3', true);
-      _logAudit('M3 ON · Banda 2 moviendo pieza hacia fresadora', LogType.success);
+      _logAudit(
+          'M3 ON · Banda 2 moviendo pieza hacia fresadora', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
       // EST4: P3 detectado → M3 apaga, M4 fresar, M3+M6 avanzar
-      setState(() { _currentState = 4; _sensor('P3').active = true; });
-      _logAudit('EST4 · P3 detectado · Pieza en fresadora · Fresando...', LogType.info);
+      setState(() {
+        _currentState = 4;
+        _sensor('P3').active = true;
+      });
+      _logAudit('EST4 · P3 detectado · Pieza en fresadora · Fresando...',
+          LogType.info);
       _toggleActuator('M3', false);
       await Future.delayed(const Duration(milliseconds: 500));
       _toggleActuator('M4', true);
-      _logAudit('M4 ON · Motor fresadora activo · Fresando pieza', LogType.success);
+      _logAudit(
+          'M4 ON · Motor fresadora activo · Fresando pieza', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
       _toggleActuator('M4', false);
       _logAudit('M4 OFF · Fresado completado', LogType.audit);
@@ -249,17 +273,23 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       _toggleActuator('M3', true);
       _toggleActuator('M6', true);
       setState(() => _sensor('P3').active = false);
-      _logAudit('M3+M6 ON · Avanzando pieza hacia taladradora', LogType.success);
+      _logAudit(
+          'M3+M6 ON · Avanzando pieza hacia taladradora', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
       // EST5: P4 detectado → M5 taladro, M7 empuja salida
-      setState(() { _currentState = 5; _sensor('P4').active = true; });
-      _logAudit('EST5 · P4 detectado · Pieza en taladradora · Taladrando...', LogType.info);
+      setState(() {
+        _currentState = 5;
+        _sensor('P4').active = true;
+      });
+      _logAudit('EST5 · P4 detectado · Pieza en taladradora · Taladrando...',
+          LogType.info);
       _toggleActuator('M3', false);
       _toggleActuator('M6', false);
       await Future.delayed(const Duration(milliseconds: 500));
       _toggleActuator('M5', true);
-      _logAudit('M5 ON · Motor taladradora activo · Taladrando pieza', LogType.success);
+      _logAudit('M5 ON · Motor taladradora activo · Taladrando pieza',
+          LogType.success);
       await Future.delayed(const Duration(seconds: 2));
       _toggleActuator('M5', false);
       _logAudit('M5 OFF · Taladrado completado', LogType.audit);
@@ -267,14 +297,21 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       _toggleActuator('M6', true);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('M6', false);
-      setState(() { _sensor('P4').active = false; _sensor('R2').active = false; });
+      setState(() {
+        _sensor('P4').active = false;
+        _sensor('R2').active = false;
+      });
       _toggleActuator('M7', true);
       _logAudit('M7 ON · Empujador 2 activado → salida', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
       // EST6: R2 → M7 apaga, M8 banda salida
-      setState(() { _currentState = 6; _sensor('R2').active = true; });
-      _logAudit('EST6 · R2 en reposo · M7 apaga · M8 banda salida activa', LogType.info);
+      setState(() {
+        _currentState = 6;
+        _sensor('R2').active = true;
+      });
+      _logAudit('EST6 · R2 en reposo · M7 apaga · M8 banda salida activa',
+          LogType.info);
       _toggleActuator('M7', false);
       await Future.delayed(const Duration(milliseconds: 500));
       _toggleActuator('M8', true);
@@ -282,35 +319,45 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       await Future.delayed(const Duration(seconds: 2));
 
       // EST7: P5 → M8 apaga, ciclo completo
-      setState(() { _currentState = 7; _sensor('P5').active = true; });
+      setState(() {
+        _currentState = 7;
+        _sensor('P5').active = true;
+      });
       _logAudit('EST7 · P5 detectado · Pieza en área de salida', LogType.info);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('M8', false);
-      setState(() { _sensor('P5').active = false; _piezas++; });
-      _logAudit('✔ CICLO EXITOSO · Pieza maquinada y contabilizada', LogType.success);
-
+      setState(() {
+        _sensor('P5').active = false;
+        _piezas++;
+      });
+      _logAudit(
+          '✔ CICLO EXITOSO · Pieza maquinada y contabilizada', LogType.success);
     } catch (e) {
       _logAudit('ERROR en la secuencia automática: $e', LogType.error);
     }
 
-    setState(() { _isCycleRunning = false; _currentState = 0; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = false;
+      _currentState = 0;
+      _updatePermissions();
+    });
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
         // 1. Movemos el ScrollView para que envuelva a TODO
-        child: SingleChildScrollView( 
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 2. El Header ahora es el primer hijo del scroll
-              _buildHeader(), 
+              _buildHeader(),
               const SizedBox(height: 16),
-              
+
               // 3. Ya NO usamos Expanded aquí
               _buildTopBar(),
               const SizedBox(height: 10),
@@ -335,14 +382,18 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('CENTRO DE MAQUINADOS',
-                  style: TextStyle(color: kMachine, fontSize: 18,
-                      fontWeight: FontWeight.bold, letterSpacing: 1.4)),
-             /*  Text('Art. No. TMINL24-A  ·  Indexed Line 24V',
+                  style: TextStyle(
+                      color: kMachine,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.4)),
+              /*  Text('Art. No. TMINL24-A  ·  Indexed Line 24V',
                   style: TextStyle(color: kText.withOpacity(0.5), fontSize: 10,
                       letterSpacing: 1)), */
             ]),
-            Text(_clock, style: const TextStyle(color: kText, fontSize: 14,
-                fontFamily: 'monospace')),
+            Text(_clock,
+                style: const TextStyle(
+                    color: kText, fontSize: 14, fontFamily: 'monospace')),
           ],
         ),
       );
@@ -350,35 +401,46 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
   Widget _buildTopBar() => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: kPanel, border: Border.all(color: kBorder),
+            color: kPanel,
+            border: Border.all(color: kBorder),
             borderRadius: BorderRadius.circular(8)),
-        child: Wrap(spacing: 14, runSpacing: 10,
+        child: Wrap(
+          spacing: 14,
+          runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-         /*    _labeledSelect('Rol:', _role, {
+            /*    _labeledSelect('Rol:', _role, {
               'Ingeniero': 'Ingeniero (Control Total)',
               'Operador': 'Operador',
             }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
               'auto': 'Automático',
-            }, (v) { setState(() => _mode = v!); _updatePermissions(); }),
-           /*  _labeledSelect('Conexión:', 'sim', {
+            }, (v) {
+              setState(() => _mode = v!);
+              _updatePermissions();
+            }),
+            /*  _labeledSelect('Conexión:', 'sim', {
               'sim': 'Simulación Local',
               'lan': 'Red Local (KC868)',
             }, (_) {}), */
-             ElevatedButton.icon(
+            ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
-              icon: Icon(_isCycleRunning ? Icons.stop : Icons.play_arrow, size: 16),
-              label: Text(_isCycleRunning ? 'Ejecutando...' : 'Iniciar Ciclo Automático'),
+              icon: Icon(_isCycleRunning ? Icons.stop : Icons.play_arrow,
+                  size: 16),
+              label: Text(_isCycleRunning
+                  ? 'Ejecutando...'
+                  : 'Iniciar Ciclo Automático'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen, foregroundColor: kBg,
+                backgroundColor: kGreen,
+                foregroundColor: kBg,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
-            ), 
-           /*  ElevatedButton.icon(
+            ),
+            /*  ElevatedButton.icon(
               onPressed: () => _logAudit('Auditoría exportada.', LogType.audit),
               icon: const Icon(Icons.download, size: 16),
               label: const Text('Exportar Auditoría CSV'),
@@ -394,22 +456,27 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
-      ValueChanged<String?> fn) =>
+          ValueChanged<String?> fn) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
         Text(lbl, style: const TextStyle(color: kText, fontSize: 12)),
         const SizedBox(width: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(color: kBg, border: Border.all(color: kCyan),
+          decoration: BoxDecoration(
+              color: kBg,
+              border: Border.all(color: kCyan),
               borderRadius: BorderRadius.circular(4)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: val, dropdownColor: kPanel,
+              value: val,
+              dropdownColor: kPanel,
               style: const TextStyle(color: kCyan, fontSize: 12),
               icon: const Icon(Icons.arrow_drop_down, color: kCyan, size: 18),
               isDense: true,
-              items: items.entries.map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+              items: items.entries
+                  .map((e) =>
+                      DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .toList(),
               onChanged: fn,
             ),
           ),
@@ -419,13 +486,15 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
   Widget _kpiBox(String label, String value, Color color) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-            color: color.withOpacity(0.08), border: Border.all(color: color),
+            color: color.withOpacity(0.08),
+            border: Border.all(color: color),
             borderRadius: BorderRadius.circular(6)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(label, style: const TextStyle(color: kText, fontSize: 10)),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: color, fontSize: 22,
-              fontWeight: FontWeight.bold)),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 22, fontWeight: FontWeight.bold)),
         ]),
       );
 
@@ -474,13 +543,16 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
 
             // ── Línea de flujo base ───────────────────────
             Positioned(
-              left: 10, top: 130, right: 10,
+              left: 10,
+              top: 130,
+              right: 10,
               child: Container(height: 2, color: kBorder),
             ),
 
             // ── Flecha dirección ──────────────────────────
             Positioned(
-              left: 420, top: 126,
+              left: 420,
+              top: 126,
               child: const Icon(Icons.arrow_forward, color: kMachine, size: 18),
             ),
           ]),
@@ -489,13 +561,15 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     );
   }
 
-  Widget _dtBand(String label, bool active, {required double left,
-      required double top, double w = 80}) =>
+  Widget _dtBand(String label, bool active,
+          {required double left, required double top, double w = 80}) =>
       Positioned(
-        left: left, top: top,
+        left: left,
+        top: top,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: w, height: 40,
+          width: w,
+          height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active ? kMachine.withOpacity(0.2) : const Color(0xFF1A2233),
@@ -506,23 +580,28 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                 ? [BoxShadow(color: kMachine.withOpacity(0.4), blurRadius: 8)]
                 : null,
           ),
-          child: Text(label, textAlign: TextAlign.center,
+          child: Text(label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                   color: active ? kMachine : kText.withOpacity(0.4),
-                  fontSize: 9, fontWeight: FontWeight.bold)),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold)),
         ),
       );
 
   Widget _dtMachine(String label, bool active,
-      {required double left, required double top}) =>
+          {required double left, required double top}) =>
       Positioned(
-        left: left, top: top,
+        left: left,
+        top: top,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: 80, height: 70,
+          width: 80,
+          height: 70,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active ? kMachine.withOpacity(0.15) : const Color(0xFF1A2233),
+            color:
+                active ? kMachine.withOpacity(0.15) : const Color(0xFF1A2233),
             border: Border.all(
                 color: active ? kMachine : const Color(0xFF334455), width: 2),
             borderRadius: BorderRadius.circular(6),
@@ -530,20 +609,24 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                 ? [BoxShadow(color: kMachine.withOpacity(0.5), blurRadius: 12)]
                 : null,
           ),
-          child: Text(label, textAlign: TextAlign.center,
+          child: Text(label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                   color: active ? kMachine : kText.withOpacity(0.4),
-                  fontSize: 9, fontWeight: FontWeight.bold)),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold)),
         ),
       );
 
   Widget _dtPusher(String label, bool active,
-      {required double left, required double top}) =>
+          {required double left, required double top}) =>
       Positioned(
-        left: left, top: top,
+        left: left,
+        top: top,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: 55, height: 55,
+          width: 55,
+          height: 55,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active ? kCyan.withOpacity(0.15) : const Color(0xFF1A2233),
@@ -554,25 +637,30 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                 ? [BoxShadow(color: kCyan.withOpacity(0.4), blurRadius: 8)]
                 : null,
           ),
-          child: Text(label, textAlign: TextAlign.center,
+          child: Text(label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                   color: active ? kCyan : kText.withOpacity(0.4),
-                  fontSize: 8, fontWeight: FontWeight.bold)),
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold)),
         ),
       );
 
   Widget _dtSensorDot(String id, bool active,
-      {required double left, required double top}) =>
+          {required double left, required double top}) =>
       Positioned(
-        left: left, top: top,
+        left: left,
+        top: top,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 24, height: 24,
+          width: 24,
+          height: 24,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: active ? kGreen.withOpacity(0.2) : Colors.transparent,
-            border: Border.all(color: active ? kGreen : const Color(0xFF334455)),
+            border:
+                Border.all(color: active ? kGreen : const Color(0xFF334455)),
             boxShadow: active
                 ? [BoxShadow(color: kGreen.withOpacity(0.7), blurRadius: 8)]
                 : null,
@@ -580,7 +668,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           child: Text(id,
               style: TextStyle(
                   color: active ? kGreen : const Color(0xFF546E7A),
-                  fontSize: 7, fontWeight: FontWeight.bold)),
+                  fontSize: 7,
+                  fontWeight: FontWeight.bold)),
         ),
       );
 
@@ -612,20 +701,30 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: s.active ? kGreen.withOpacity(0.07) : Colors.black.withOpacity(0.3),
-          border: Border.all(
-              color: s.active ? kGreen.withOpacity(0.4) : kBorder),
-          borderRadius: BorderRadius.circular(4)),
+            color: s.active
+                ? kGreen.withOpacity(0.07)
+                : Colors.black.withOpacity(0.3),
+            border:
+                Border.all(color: s.active ? kGreen.withOpacity(0.4) : kBorder),
+            borderRadius: BorderRadius.circular(4)),
         child: Row(children: [
-          Container(width: 8, height: 8,
+          Container(
+              width: 8,
+              height: 8,
               decoration: BoxDecoration(
-                shape: BoxShape.circle, color: color,
-                boxShadow: s.active
-                    ? [BoxShadow(color: color.withOpacity(0.8), blurRadius: 6)]
-                    : null)),
+                  shape: BoxShape.circle,
+                  color: color,
+                  boxShadow: s.active
+                      ? [
+                          BoxShadow(
+                              color: color.withOpacity(0.8), blurRadius: 6)
+                        ]
+                      : null)),
           const SizedBox(width: 8),
-          Expanded(child: Text('${s.id}: ${s.label}',
-              style: TextStyle(color: s.active ? kGreen : kText, fontSize: 11))),
+          Expanded(
+              child: Text('${s.id}: ${s.label}',
+                  style: TextStyle(
+                      color: s.active ? kGreen : kText, fontSize: 11))),
         ]),
       ),
     );
@@ -643,17 +742,25 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: a.on ? kMachine.withOpacity(0.07) : Colors.black.withOpacity(0.3),
-          border: Border.all(color: a.on ? kMachine.withOpacity(0.5) : kBorder),
-          borderRadius: BorderRadius.circular(4)),
+            color: a.on
+                ? kMachine.withOpacity(0.07)
+                : Colors.black.withOpacity(0.3),
+            border:
+                Border.all(color: a.on ? kMachine.withOpacity(0.5) : kBorder),
+            borderRadius: BorderRadius.circular(4)),
         child: Row(children: [
-          Expanded(child: Column(
+          Expanded(
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(a.id, style: TextStyle(color: a.on ? kMachine : kText,
-                  fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(a.id,
+                  style: TextStyle(
+                      color: a.on ? kMachine : kText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold)),
               Text(a.description,
-                  style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)),
+                  style:
+                      const TextStyle(color: Color(0xFF546E7A), fontSize: 9)),
             ],
           )),
           Transform.scale(
@@ -675,7 +782,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         child: Container(
           height: 250,
           decoration: BoxDecoration(
-              color: kBg, border: Border.all(color: kBorder),
+              color: kBg,
+              border: Border.all(color: kBorder),
               borderRadius: BorderRadius.circular(4)),
           padding: const EdgeInsets.all(8),
           child: ListView.builder(
@@ -685,15 +793,17 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
               final l = _logs[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 2),
-                child: RichText(text: TextSpan(
+                child: RichText(
+                    text: TextSpan(
                   style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                   children: [
-                    TextSpan(text: '[${l.time}] ',
+                    TextSpan(
+                        text: '[${l.time}] ',
                         style: const TextStyle(color: Color(0xFF546E7A))),
-                    TextSpan(text: '[${l.user}] - ',
+                    TextSpan(
+                        text: '[${l.user}] - ',
                         style: const TextStyle(color: kCyan)),
-                    TextSpan(text: l.message,
-                        style: TextStyle(color: l.color)),
+                    TextSpan(text: l.message, style: TextStyle(color: l.color)),
                   ],
                 )),
               );
@@ -747,7 +857,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         height: height,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: kPanel, border: Border.all(color: kBorder),
+            color: kPanel,
+            border: Border.all(color: kBorder),
             borderRadius: BorderRadius.circular(8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -757,8 +868,11 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
               padding: const EdgeInsets.only(bottom: 8),
               decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: kBorder))),
-              child: Text(title, style: TextStyle(color: titleColor,
-                  fontSize: 12, fontWeight: FontWeight.bold)),
+              child: Text(title,
+                  style: TextStyle(
+                      color: titleColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             child,

@@ -118,9 +118,7 @@ class _SplashScreenState extends State<SplashScreen>
               size: Size.infinite,
             ),
           ),
-
           const CircuitOverlay(),
-
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -145,7 +143,8 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.blueAccent.withValues(alpha: 0.3),
+                                  color:
+                                      Colors.blueAccent.withValues(alpha: 0.3),
                                   blurRadius: 30,
                                   spreadRadius: 8,
                                 ),
@@ -159,9 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 28),
-
                       const Text(
                         "INDUSTRIAL CONTROL",
                         textAlign: TextAlign.center,
@@ -171,9 +168,7 @@ class _SplashScreenState extends State<SplashScreen>
                           letterSpacing: 2.5,
                         ),
                       ),
-
                       const SizedBox(height: 10),
-
                       Text(
                         "Sistema de monitoreo industrial",
                         style: TextStyle(
@@ -181,9 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: 15,
                         ),
                       ),
-
                       const SizedBox(height: 35),
-
                       SizedBox(
                         width: 300,
                         child: ClipRRect(
@@ -196,9 +189,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       Text(
                         "${(progress * 100).toInt()}%",
                         style: const TextStyle(
@@ -206,16 +197,13 @@ class _SplashScreenState extends State<SplashScreen>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: Text(
                           // Cuando llega al 100 % muestra "Completado"
                           progress >= 1 ? "Completado" : loadingText,
-                          key: ValueKey(
-                              progress >= 1 ? "done" : loadingText),
+                          key: ValueKey(progress >= 1 ? "done" : loadingText),
                           style: TextStyle(
                             color: progress >= 1
                                 ? Colors.blueAccent
@@ -226,16 +214,13 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 45),
-
                       Text(
                         "Proyecto SCADA Industrial",
                         style: TextStyle(
                           color: Colors.grey[500],
                         ),
                       ),
-
                       Text(
                         "Versión 1.0.0",
                         style: TextStyle(
@@ -267,14 +252,12 @@ class ParticlePainter extends CustomPainter {
 
     for (int i = 0; i < 45; i++) {
       final x = random.nextDouble() * size.width;
-      final y =
-          ((random.nextDouble() * size.height) + (animationValue * 300)) %
-              size.height;
+      final y = ((random.nextDouble() * size.height) + (animationValue * 300)) %
+          size.height;
 
       final radius = random.nextDouble() * 2.5 + 1;
 
-      final paint = Paint()
-        ..color = Colors.blueAccent.withValues(alpha: 0.35);
+      final paint = Paint()..color = Colors.blueAccent.withValues(alpha: 0.35);
 
       canvas.drawCircle(Offset(x, y), radius, paint);
     }

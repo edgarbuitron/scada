@@ -22,14 +22,14 @@ class CloudSyncApp extends StatelessWidget {
 // ─────────────────────────────────────────────
 // COLORS
 // ─────────────────────────────────────────────
-const Color _bg        = Color(0xFF0D1117);
-const Color _card      = Color(0xFF161B22);
-const Color _border    = Color(0xFF21262D);
-const Color _blue      = Color(0xFF1F6FEB);
-const Color _green     = Color(0xFF3FB950);
-const Color _textPri   = Color(0xFFE6EDF3);
-const Color _textSec   = Color(0xFF8B949E);
-const Color _orange    = Color(0xFFD29922);
+const Color _bg = Color(0xFF0D1117);
+const Color _card = Color(0xFF161B22);
+const Color _border = Color(0xFF21262D);
+const Color _blue = Color(0xFF1F6FEB);
+const Color _green = Color(0xFF3FB950);
+const Color _textPri = Color(0xFFE6EDF3);
+const Color _textSec = Color(0xFF8B949E);
+const Color _orange = Color(0xFFD29922);
 
 // ─────────────────────────────────────────────
 // MAIN SCREEN
@@ -138,7 +138,7 @@ class _TopCards extends StatelessWidget {
       final w = constraints.maxWidth;
       final isNarrow = w < 600;
 
-      Widget syncCard   = _SyncCard();
+      Widget syncCard = _SyncCard();
       Widget storageCard = _StorageCard();
       //Widget serverCard  = _ServerCard();
 
@@ -253,18 +253,18 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final r  = size.width / 2 - 6;
+    final r = size.width / 2 - 6;
     const strokeW = 10.0;
 
     final bgPaint = Paint()
-      ..color  = _border
-      ..style  = PaintingStyle.stroke
+      ..color = _border
+      ..style = PaintingStyle.stroke
       ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round;
 
     final fgPaint = Paint()
-      ..color  = _blue
-      ..style  = PaintingStyle.stroke
+      ..color = _blue
+      ..style = PaintingStyle.stroke
       ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round;
 
@@ -281,8 +281,6 @@ class _DonutPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
-
-
 
 /* 
 
@@ -330,12 +328,6 @@ class _ServerCard extends StatelessWidget {
 }
  */
 
-
-
-
-
-
-
 // ─────────────────────────────────────────────
 // BOTTOM ROW  (DB card + Sync info card)
 // ─────────────────────────────────────────────
@@ -345,7 +337,7 @@ class _BottomCards extends StatelessWidget {
     return LayoutBuilder(builder: (ctx, constraints) {
       final isNarrow = constraints.maxWidth < 600;
 
-      Widget dbCard   = _DatabaseCard();
+      Widget dbCard = _DatabaseCard();
       Widget syncInfo = _SyncInfoCard();
 
       if (isNarrow) {
@@ -413,8 +405,8 @@ class _DatabaseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _DbStat(label: 'Tamaño',    value: '2.45 GB'),
-              _DbStat(label: 'Tablas',    value: '38'),
+              _DbStat(label: 'Tamaño', value: '2.45 GB'),
+              _DbStat(label: 'Tablas', value: '38'),
               _DbStat(label: 'Registros', value: '125,430'),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,9 +449,7 @@ class _DbStat extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value,
             style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _textPri)),
+                fontSize: 14, fontWeight: FontWeight.w600, color: _textPri)),
       ],
     );
   }
@@ -490,9 +480,7 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 5),
           Text(label,
               style: TextStyle(
-                  fontSize: 11,
-                  color: color,
-                  fontWeight: FontWeight.w600)),
+                  fontSize: 11, color: color, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -502,11 +490,13 @@ class _StatusBadge extends StatelessWidget {
 // ── Información de sincronización ──
 class _SyncInfoCard extends StatelessWidget {
   static const _rows = [
-    _SyncRow(Icons.insert_drive_file_outlined, 'Archivos sincronizados', '1,245', null),
-    _SyncRow(Icons.pending_outlined,           'Archivos pendientes',    '0',     null),
-    _SyncRow(Icons.warning_amber_outlined,     'Conflictos detectados',  '0',     null),
-    _SyncRow(Icons.upload_outlined,            'Velocidad de subida',    '12.5 MB/s', null),
-    _SyncRow(Icons.download_outlined,          'Velocidad de descarga',  '18.3 MB/s', null),
+    _SyncRow(Icons.insert_drive_file_outlined, 'Archivos sincronizados',
+        '1,245', null),
+    _SyncRow(Icons.pending_outlined, 'Archivos pendientes', '0', null),
+    _SyncRow(Icons.warning_amber_outlined, 'Conflictos detectados', '0', null),
+    _SyncRow(Icons.upload_outlined, 'Velocidad de subida', '12.5 MB/s', null),
+    _SyncRow(
+        Icons.download_outlined, 'Velocidad de descarga', '18.3 MB/s', null),
   ];
 
   @override
@@ -514,9 +504,7 @@ class _SyncInfoCard extends StatelessWidget {
     return _DashCard(
       label: 'Información de sincronización',
       child: Column(
-        children: _rows
-            .map((r) => _SyncInfoRow(row: r))
-            .toList(),
+        children: _rows.map((r) => _SyncInfoRow(row: r)).toList(),
       ),
     );
   }
@@ -524,9 +512,9 @@ class _SyncInfoCard extends StatelessWidget {
 
 class _SyncRow {
   final IconData icon;
-  final String  label;
-  final String  value;
-  final Color?  valueColor;
+  final String label;
+  final String value;
+  final Color? valueColor;
   const _SyncRow(this.icon, this.label, this.value, this.valueColor);
 }
 

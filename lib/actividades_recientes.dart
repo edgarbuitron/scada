@@ -25,13 +25,13 @@ class Actividad {
 }
 
 const _actividades = [
-Actividad(
-  titulo: 'Inicio de sesión',
-  descripcion: 'El usuario inició sesión en el sistema',
-  fecha: '19/05/2025 05:28 PM',
-  icon: Icons.login_rounded,
-  color: Color(0xFF3B82F6),
-),
+  Actividad(
+    titulo: 'Inicio de sesión',
+    descripcion: 'El usuario inició sesión en el sistema',
+    fecha: '19/05/2025 05:28 PM',
+    icon: Icons.login_rounded,
+    color: Color(0xFF3B82F6),
+  ),
   Actividad(
     titulo: 'Cambio de configuración',
     descripcion: 'Actualizó la configuración de alarmas',
@@ -78,11 +78,6 @@ class ActividadesApp extends StatelessWidget {
       );
 }
 
-
-
-
-
-
 class ActividadesScreen extends StatelessWidget {
   const ActividadesScreen({super.key});
 
@@ -112,76 +107,52 @@ class ActividadesScreen extends StatelessWidget {
   }
 }
 
-
-
-
-
-
-
-
 // ─── Widget principal ────────────────────────────────────────────────────────
 class ActividadesCard extends StatelessWidget {
   const ActividadesCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-
-
-
-
-
     return Container(
-  decoration: BoxDecoration(
-    color: kCard,
-    borderRadius: BorderRadius.circular(14),
-    border: Border.all(color: kBorder),
-  ),
-  child: SingleChildScrollView(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
-          child: Text(
-            'Actividades recientes',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: kText,
-            ),
-          ),
+        decoration: BoxDecoration(
+          color: kCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: kBorder),
         ),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _actividades.length,
-          separatorBuilder: (_, __) => const Divider(
-            height: 1,
-            color: kBorder,
-            indent: 20,
-            endIndent: 20,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+                child: Text(
+                  'Actividades recientes',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: kText,
+                  ),
+                ),
+              ),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _actividades.length,
+                separatorBuilder: (_, __) => const Divider(
+                  height: 1,
+                  color: kBorder,
+                  indent: 20,
+                  endIndent: 20,
+                ),
+                itemBuilder: (_, i) => _ActividadTile(act: _actividades[i]),
+              ),
+              const SizedBox(height: 10),
+            ],
           ),
-          itemBuilder: (_, i) => _ActividadTile(act: _actividades[i]),
-        ),
-        const SizedBox(height: 10),
-      ],
-    ),
-  )
-  );
+        ));
   }
-  }
-
-
-
-
-
-
-
-
-
-
-
+}
 
 // ─── Fila actividad ──────────────────────────────────────────────────────────
 class _ActividadTile extends StatefulWidget {
@@ -218,7 +189,6 @@ class _ActividadTileState extends State<_ActividadTile> {
               child: Icon(a.icon, color: a.color, size: 20),
             ),
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,7 +212,6 @@ class _ActividadTileState extends State<_ActividadTile> {
                 ],
               ),
             ),
-
             Text(
               a.fecha,
               style: const TextStyle(

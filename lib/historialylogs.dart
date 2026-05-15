@@ -34,14 +34,14 @@ class R {
   final double _w;
   const R(this._w);
 
-  bool get isSmall  => _w < 600;
+  bool get isSmall => _w < 600;
   bool get isMedium => _w >= 600 && _w < 1024;
-  bool get isLarge  => _w >= 1024;
+  bool get isLarge => _w >= 1024;
 
   double scale(double base) {
-    if (_w < 400)  return base * 0.78;
-    if (_w < 600)  return base * 0.88;
-    if (_w < 900)  return base * 0.94;
+    if (_w < 400) return base * 0.78;
+    if (_w < 600) return base * 0.88;
+    if (_w < 900) return base * 0.94;
     return base;
   }
 
@@ -54,8 +54,8 @@ class R {
 
   // Ancho de cada control de filtro
   double get filterWidth {
-    if (_w < 400) return (_w - hPad * 2 - 10) / 2;  // 2 por fila
-    if (_w < 600) return (_w - hPad * 2 - 10) / 2;  // 2 por fila
+    if (_w < 400) return (_w - hPad * 2 - 10) / 2; // 2 por fila
+    if (_w < 600) return (_w - hPad * 2 - 10) / 2; // 2 por fila
     if (_w < 900) return 160;
     return 170;
   }
@@ -77,19 +77,18 @@ class R {
 
 // ─── Colores ──────────────────────────────────────────────────
 class AC {
-  static const bg      = Color(0xFF07111E);
-  static const card    = Color(0xFF0E1828);
-  static const border  = Colors.blueAccent;
-  static const muted   = Colors.white54;
-  static const white   = Colors.white;
+  static const bg = Color(0xFF07111E);
+  static const card = Color(0xFF0E1828);
+  static const border = Colors.blueAccent;
+  static const muted = Colors.white54;
+  static const white = Colors.white;
 }
 
 // ─── Formateo de fecha ────────────────────────────────────────
 final _fmt = DateFormat('dd/MM/yyyy');
 final _fmtFull = DateFormat('dd/MM/yyyy HH:mm:ss');
 
-String _fmtDate(DateTime? d) =>
-    d == null ? 'Seleccionar' : _fmt.format(d);
+String _fmtDate(DateTime? d) => d == null ? 'Seleccionar' : _fmt.format(d);
 
 /// Parsea "dd/MM/yyyy HH:mm:ss" → DateTime (solo la fecha)
 DateTime? _parseRowDate(String raw) {
@@ -112,12 +111,12 @@ class _LogsScreenState extends State<LogsScreen> {
   // ── Filtros ──
   DateTime? startDate;
   DateTime? endDate;
-  String maqueta   = "Todas";
-  String evento    = "Todos";
+  String maqueta = "Todas";
+  String evento = "Todos";
   String severidad = "Todas";
 
   // ── Paginación ──
-  int currentPage    = 1;
+  int currentPage = 1;
   final int rowsPerPage = 8;
 
   // ── Datos ──
@@ -131,33 +130,41 @@ class _LogsScreenState extends State<LogsScreen> {
 
   void _generarRegistros() {
     final eventos = [
-      "Motor iniciado",    "Paro emergencia",
-      "Presión alta",      "Sensor desconectado",
-      "Motor detenido",    "Error PLC",
-      "Temperatura alta",  "Ciclo completado",
+      "Motor iniciado",
+      "Paro emergencia",
+      "Presión alta",
+      "Sensor desconectado",
+      "Motor detenido",
+      "Error PLC",
+      "Temperatura alta",
+      "Ciclo completado",
     ];
     final maquetas = [
-      "centro neumatico", "centro de maquinados",
-      "centro de prensado", "robot 3 ejes",
+      "centro neumatico",
+      "centro de maquinados",
+      "centro de prensado",
+      "robot 3 ejes",
     ];
     final usuarios = [
-      "Juan Pérez", "María López", "Carlos Ruiz", "Ana López",
+      "Juan Pérez",
+      "María López",
+      "Carlos Ruiz",
+      "Ana López",
     ];
     final severidades = ["Info", "Advertencia", "Crítico"];
 
     // Repartimos 40 registros entre el 10/05 y el 20/05
     registros = List.generate(40, (i) {
-      final day  = 10 + (i ~/ 4);           // días 10 → 19
-      final hour = 8  + (i % 4) * 2;        // horas 8, 10, 12, 14
-      final min  = (i * 7) % 60;
-      final dateStr =
-          '${day.toString().padLeft(2, '0')}/05/2025 '
+      final day = 10 + (i ~/ 4); // días 10 → 19
+      final hour = 8 + (i % 4) * 2; // horas 8, 10, 12, 14
+      final min = (i * 7) % 60;
+      final dateStr = '${day.toString().padLeft(2, '0')}/05/2025 '
           '${hour.toString().padLeft(2, '0')}:${min.toString().padLeft(2, '0')}:00';
       return {
-        "fecha"    : dateStr,
-        "maqueta"  : maquetas[i % maquetas.length],
-        "evento"   : eventos[i % eventos.length],
-        "usuario"  : usuarios[i % usuarios.length],
+        "fecha": dateStr,
+        "maqueta": maquetas[i % maquetas.length],
+        "evento": eventos[i % eventos.length],
+        "usuario": usuarios[i % usuarios.length],
         "severidad": severidades[i % severidades.length],
       };
     });
@@ -177,12 +184,14 @@ class _LogsScreenState extends State<LogsScreen> {
       final rowDate = _parseRowDate(row["fecha"]!);
       if (rowDate != null) {
         if (startDate != null) {
-          final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+          final start =
+              DateTime(startDate!.year, startDate!.month, startDate!.day);
           if (rowDate.isBefore(start)) return false;
         }
         if (endDate != null) {
           // incluimos todo el día final
-          final end = DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
+          final end =
+              DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
           if (rowDate.isAfter(end)) return false;
         }
       }
@@ -204,11 +213,11 @@ class _LogsScreenState extends State<LogsScreen> {
 
   void _resetFilters() {
     setState(() {
-      maqueta   = "Todas";
-      evento    = "Todos";
+      maqueta = "Todas";
+      evento = "Todos";
       severidad = "Todas";
       startDate = null;
-      endDate   = null;
+      endDate = null;
       currentPage = 1;
     });
   }
@@ -217,7 +226,7 @@ class _LogsScreenState extends State<LogsScreen> {
   Future<void> _pickDate(BuildContext ctx, bool isStart) async {
     final initial = isStart
         ? (startDate ?? DateTime(2025, 5, 10))
-        : (endDate   ?? DateTime(2025, 5, 20));
+        : (endDate ?? DateTime(2025, 5, 20));
 
     final picked = await showDatePicker(
       context: ctx,
@@ -246,7 +255,8 @@ class _LogsScreenState extends State<LogsScreen> {
         } else {
           endDate = picked;
           // si la fecha final es menor que la inicial, limpiamos la inicial
-          if (startDate != null && picked.isBefore(startDate!)) startDate = null;
+          if (startDate != null && picked.isBefore(startDate!))
+            startDate = null;
         }
         currentPage = 1;
       });
@@ -256,17 +266,23 @@ class _LogsScreenState extends State<LogsScreen> {
   // ── Color de severidad ──
   Color _severityColor(String v) {
     switch (v) {
-      case "Crítico":     return Colors.redAccent;
-      case "Advertencia": return Colors.orangeAccent;
-      default:            return Colors.greenAccent;
+      case "Crítico":
+        return Colors.redAccent;
+      case "Advertencia":
+        return Colors.orangeAccent;
+      default:
+        return Colors.greenAccent;
     }
   }
 
   Color _severityBg(String v) {
     switch (v) {
-      case "Crítico":     return Colors.redAccent.withOpacity(0.12);
-      case "Advertencia": return Colors.orangeAccent.withOpacity(0.12);
-      default:            return Colors.greenAccent.withOpacity(0.10);
+      case "Crítico":
+        return Colors.redAccent.withOpacity(0.12);
+      case "Advertencia":
+        return Colors.orangeAccent.withOpacity(0.12);
+      default:
+        return Colors.greenAccent.withOpacity(0.10);
     }
   }
 
@@ -336,22 +352,55 @@ class _LogsScreenState extends State<LogsScreen> {
         // Fecha inicial
         _buildDateField(ctx, r, "Fecha inicial", startDate, true),
         // Fecha final
-        _buildDateField(ctx, r, "Fecha final",   endDate,   false),
+        _buildDateField(ctx, r, "Fecha final", endDate, false),
         // Maqueta
-        _buildDropdown(r, "Maqueta", maqueta,
-          ["Todas","centro neumatico","centro de maquinados","centro de prensado","robot 3 ejes"],
-          (v) => setState(() { maqueta = v!; currentPage = 1; }),
+        _buildDropdown(
+          r,
+          "Maqueta",
+          maqueta,
+          [
+            "Todas",
+            "centro neumatico",
+            "centro de maquinados",
+            "centro de prensado",
+            "robot 3 ejes"
+          ],
+          (v) => setState(() {
+            maqueta = v!;
+            currentPage = 1;
+          }),
         ),
         // Tipo evento
-        _buildDropdown(r, "Tipo evento", evento,
-          ["Todos","Motor iniciado","Paro emergencia","Presión alta",
-           "Sensor desconectado","Motor detenido","Error PLC","Temperatura alta","Ciclo completado"],
-          (v) => setState(() { evento = v!; currentPage = 1; }),
+        _buildDropdown(
+          r,
+          "Tipo evento",
+          evento,
+          [
+            "Todos",
+            "Motor iniciado",
+            "Paro emergencia",
+            "Presión alta",
+            "Sensor desconectado",
+            "Motor detenido",
+            "Error PLC",
+            "Temperatura alta",
+            "Ciclo completado"
+          ],
+          (v) => setState(() {
+            evento = v!;
+            currentPage = 1;
+          }),
         ),
         // Severidad
-        _buildDropdown(r, "Severidad", severidad,
-          ["Todas","Info","Advertencia","Crítico"],
-          (v) => setState(() { severidad = v!; currentPage = 1; }),
+        _buildDropdown(
+          r,
+          "Severidad",
+          severidad,
+          ["Todas", "Info", "Advertencia", "Crítico"],
+          (v) => setState(() {
+            severidad = v!;
+            currentPage = 1;
+          }),
         ),
         // Botón restablecer
         _buildResetButton(r),
@@ -359,17 +408,15 @@ class _LogsScreenState extends State<LogsScreen> {
     );
   }
 
-  Widget _buildDateField(BuildContext ctx, R r, String label,
-      DateTime? date, bool isStart) {
+  Widget _buildDateField(
+      BuildContext ctx, R r, String label, DateTime? date, bool isStart) {
     final hasDate = date != null;
     return SizedBox(
       width: r.filterWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  color: AC.muted, fontSize: r.scale(12))),
+          Text(label, style: TextStyle(color: AC.muted, fontSize: r.scale(12))),
           SizedBox(height: r.scale(6)),
           GestureDetector(
             onTap: () => _pickDate(ctx, isStart),
@@ -406,8 +453,10 @@ class _LogsScreenState extends State<LogsScreen> {
                   if (hasDate)
                     GestureDetector(
                       onTap: () => setState(() {
-                        if (isStart) startDate = null;
-                        else         endDate   = null;
+                        if (isStart)
+                          startDate = null;
+                        else
+                          endDate = null;
                         currentPage = 1;
                       }),
                       child: Icon(Icons.close,
@@ -422,16 +471,14 @@ class _LogsScreenState extends State<LogsScreen> {
     );
   }
 
-  Widget _buildDropdown(R r, String label, String value,
-      List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(R r, String label, String value, List<String> items,
+      Function(String?) onChanged) {
     return SizedBox(
       width: r.filterWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  color: AC.muted, fontSize: r.scale(12))),
+          Text(label, style: TextStyle(color: AC.muted, fontSize: r.scale(12))),
           SizedBox(height: r.scale(6)),
           Container(
             padding: EdgeInsets.symmetric(horizontal: r.scale(10)),
@@ -444,8 +491,7 @@ class _LogsScreenState extends State<LogsScreen> {
               isExpanded: true,
               underline: const SizedBox(),
               dropdownColor: const Color(0xFF0E1828),
-              style: TextStyle(
-                  color: AC.white, fontSize: r.scale(13)),
+              style: TextStyle(color: AC.white, fontSize: r.scale(13)),
               items: items
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
@@ -540,17 +586,17 @@ class _LogsScreenState extends State<LogsScreen> {
       letterSpacing: 0.8,
     );
     return Container(
-      padding: EdgeInsets.symmetric(
-          vertical: r.scale(12), horizontal: r.scale(8)),
+      padding:
+          EdgeInsets.symmetric(vertical: r.scale(12), horizontal: r.scale(8)),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.white24)),
       ),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text("FECHA",     style: style)),
-          Expanded(flex: 2, child: Text("MAQUETA",   style: style)),
-          Expanded(flex: 2, child: Text("EVENTO",    style: style)),
-          Expanded(flex: 2, child: Text("USUARIO",   style: style)),
+          Expanded(flex: 2, child: Text("FECHA", style: style)),
+          Expanded(flex: 2, child: Text("MAQUETA", style: style)),
+          Expanded(flex: 2, child: Text("EVENTO", style: style)),
+          Expanded(flex: 2, child: Text("USUARIO", style: style)),
           Expanded(flex: 1, child: Text("SEVERIDAD", style: style)),
         ],
       ),
@@ -560,10 +606,11 @@ class _LogsScreenState extends State<LogsScreen> {
   Widget _buildTableRow(R r, Map<String, String> row, int index) {
     final sev = row["severidad"]!;
     return Container(
-      padding: EdgeInsets.symmetric(
-          vertical: r.scale(13), horizontal: r.scale(8)),
+      padding:
+          EdgeInsets.symmetric(vertical: r.scale(13), horizontal: r.scale(8)),
       decoration: BoxDecoration(
-        color: index.isEven ? Colors.white.withOpacity(0.02) : Colors.transparent,
+        color:
+            index.isEven ? Colors.white.withOpacity(0.02) : Colors.transparent,
         border: const Border(
           bottom: BorderSide(color: Colors.white12),
         ),
@@ -574,32 +621,28 @@ class _LogsScreenState extends State<LogsScreen> {
             flex: 2,
             child: Text(
               row["fecha"]!,
-              style: TextStyle(
-                  color: AC.white, fontSize: r.scale(12)),
+              style: TextStyle(color: AC.white, fontSize: r.scale(12)),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               row["maqueta"]!,
-              style: TextStyle(
-                  color: AC.white, fontSize: r.scale(12)),
+              style: TextStyle(color: AC.white, fontSize: r.scale(12)),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               row["evento"]!,
-              style: TextStyle(
-                  color: AC.white, fontSize: r.scale(12)),
+              style: TextStyle(color: AC.white, fontSize: r.scale(12)),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               row["usuario"]!,
-              style: TextStyle(
-                  color: Colors.white70, fontSize: r.scale(12)),
+              style: TextStyle(color: Colors.white70, fontSize: r.scale(12)),
             ),
           ),
           Expanded(
@@ -639,8 +682,7 @@ class _LogsScreenState extends State<LogsScreen> {
           SizedBox(height: r.scale(12)),
           Text(
             "Sin registros con los filtros aplicados",
-            style: TextStyle(
-                color: Colors.white38, fontSize: r.scale(13)),
+            style: TextStyle(color: Colors.white38, fontSize: r.scale(13)),
           ),
         ],
       ),
@@ -650,10 +692,10 @@ class _LogsScreenState extends State<LogsScreen> {
   // ─── Paginación ───────────────────────────────────────────
   Widget _buildPagination(R r) {
     final filtered = filteredRegistros;
-    final start    = (currentPage - 1) * rowsPerPage + 1;
-    final end      = ((currentPage - 1) * rowsPerPage + currentRows.length)
+    final start = (currentPage - 1) * rowsPerPage + 1;
+    final end = ((currentPage - 1) * rowsPerPage + currentRows.length)
         .clamp(0, filtered.length);
-    final total    = filtered.length;
+    final total = filtered.length;
 
     // En móvil: diseño compacto con flechas prev/next
     if (r.isSmall) {
@@ -662,8 +704,7 @@ class _LogsScreenState extends State<LogsScreen> {
         children: [
           Text(
             "Mostrando $start–$end de $total registros",
-            style: TextStyle(
-                color: Colors.grey[400], fontSize: r.scale(11)),
+            style: TextStyle(color: Colors.grey[400], fontSize: r.scale(11)),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: r.scale(10)),
@@ -675,8 +716,7 @@ class _LogsScreenState extends State<LogsScreen> {
               SizedBox(width: r.scale(12)),
               Text(
                 "Página $currentPage de $totalPages",
-                style: TextStyle(
-                    color: AC.white, fontSize: r.scale(12)),
+                style: TextStyle(color: AC.white, fontSize: r.scale(12)),
               ),
               SizedBox(width: r.scale(12)),
               _pageBtn(r, Icons.chevron_right, currentPage < totalPages,
@@ -693,8 +733,7 @@ class _LogsScreenState extends State<LogsScreen> {
       children: [
         Text(
           "Mostrando $start a $end de $total registros",
-          style: TextStyle(
-              color: Colors.grey[400], fontSize: r.scale(12)),
+          style: TextStyle(color: Colors.grey[400], fontSize: r.scale(12)),
         ),
         _buildPageButtons(r),
       ],
@@ -712,8 +751,7 @@ class _LogsScreenState extends State<LogsScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon,
-            color: enabled ? AC.white : Colors.white24,
-            size: r.scale(18)),
+            color: enabled ? AC.white : Colors.white24, size: r.scale(18)),
       ),
     );
   }
@@ -722,7 +760,7 @@ class _LogsScreenState extends State<LogsScreen> {
     // Mostramos máximo 5 páginas centradas alrededor de la actual
     const maxVisible = 5;
     int startP = (currentPage - maxVisible ~/ 2).clamp(1, totalPages);
-    int endP   = (startP + maxVisible - 1).clamp(1, totalPages);
+    int endP = (startP + maxVisible - 1).clamp(1, totalPages);
     if (endP - startP < maxVisible - 1) {
       startP = (endP - maxVisible + 1).clamp(1, totalPages);
     }
@@ -734,8 +772,8 @@ class _LogsScreenState extends State<LogsScreen> {
           _numBtn(r, '‹', () => setState(() => currentPage--), false),
         ...List.generate(endP - startP + 1, (i) {
           final p = startP + i;
-          return _numBtn(r, '$p', () => setState(() => currentPage = p),
-              p == currentPage);
+          return _numBtn(
+              r, '$p', () => setState(() => currentPage = p), p == currentPage);
         }),
         // Botón siguiente
         if (currentPage < totalPages)
@@ -751,8 +789,8 @@ class _LogsScreenState extends State<LogsScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          constraints: BoxConstraints(
-              minWidth: r.scale(36), minHeight: r.scale(34)),
+          constraints:
+              BoxConstraints(minWidth: r.scale(36), minHeight: r.scale(34)),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active ? Colors.blueAccent : Colors.white10,
@@ -763,8 +801,7 @@ class _LogsScreenState extends State<LogsScreen> {
             style: TextStyle(
               color: AC.white,
               fontSize: r.scale(13),
-              fontWeight:
-                  active ? FontWeight.w700 : FontWeight.normal,
+              fontWeight: active ? FontWeight.w700 : FontWeight.normal,
             ),
           ),
         ),

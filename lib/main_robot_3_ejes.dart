@@ -9,15 +9,15 @@ import 'package:flutter/material.dart';
 //void main() => runApp(const ScadaApp());
 
 // ── Paleta ────────────────────────────────────────────────
-const Color kBg      = Color(0xFF081014);
-const Color kPanel   = Color(0xFF11222C);
-const Color kCyan    = Color(0xFF00EAFF);
-const Color kGreen   = Color(0xFF00FF88);
-const Color kRed     = Color(0xFFFF3366);
-const Color kBorder  = Color(0xFF1A3644);
-const Color kText    = Color(0xFFC5D1D8);
-const Color kAudit   = Color(0xFFFFAA00);
-const Color kDark    = Color(0xFF0C1820);
+const Color kBg = Color(0xFF081014);
+const Color kPanel = Color(0xFF11222C);
+const Color kCyan = Color(0xFF00EAFF);
+const Color kGreen = Color(0xFF00FF88);
+const Color kRed = Color(0xFFFF3366);
+const Color kBorder = Color(0xFF1A3644);
+const Color kText = Color(0xFFC5D1D8);
+const Color kAudit = Color(0xFFFFAA00);
+const Color kDark = Color(0xFF0C1820);
 const Color kMachine = Color(0xFFFF3366); // rojo para robot
 
 class ScadaRobot3EjesScreen extends StatelessWidget {
@@ -26,22 +26,22 @@ class ScadaRobot3EjesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Esto conecta tu menú principal con la lógica real del robot
-    return const ScadaRobotDashboard(); 
+    return const ScadaRobotDashboard();
   }
 }
 // ── App ───────────────────────────────────────────────────
 //class ScadaApp extends StatelessWidget {
-  //const ScadaApp({super.key});
-  //@override
-  //Widget build(BuildContext context) => MaterialApp(
-        //debugShowCheckedModeBanner: false,
-        //title: 'Robot 3 Ejes SCADA 4.',
-        //theme: ThemeData.dark().copyWith(
-          //scaffoldBackgroundColor: kBg,
-          //colorScheme: const ColorScheme.dark(primary: kCyan),
-        //),
-        //home: const ScadaDashboard(),
-      //);
+//const ScadaApp({super.key});
+//@override
+//Widget build(BuildContext context) => MaterialApp(
+//debugShowCheckedModeBanner: false,
+//title: 'Robot 3 Ejes SCADA 4.',
+//theme: ThemeData.dark().copyWith(
+//scaffoldBackgroundColor: kBg,
+//colorScheme: const ColorScheme.dark(primary: kCyan),
+//),
+//home: const ScadaDashboard(),
+//);
 //}
 
 // ── Modelos ───────────────────────────────────────────────
@@ -123,11 +123,11 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
   // Sensores (del PDF TM3DR24-A Engine Inputs)
   final List<SensorModel> _sensors = [
     SensorModel('S2', 'Encoder XY', 'Encoder CH-X,Y base giratoria'),
-    SensorModel('S3', 'Ref Base',   'Posición referencia base giratoria'),
-    SensorModel('S4', 'Cnt Brazo',  'Contador pulsos brazo gripper'),
-    SensorModel('S6', 'Ref Eje Z',  'Posición referencia eje vertical Z'),
-    SensorModel('S7', 'Enc Eje Z',  'Encoder CH-X,Y eje vertical'),
-    SensorModel('S8', 'Ref Grip',   'Posición referencia gripper'),
+    SensorModel('S3', 'Ref Base', 'Posición referencia base giratoria'),
+    SensorModel('S4', 'Cnt Brazo', 'Contador pulsos brazo gripper'),
+    SensorModel('S6', 'Ref Eje Z', 'Posición referencia eje vertical Z'),
+    SensorModel('S7', 'Enc Eje Z', 'Encoder CH-X,Y eje vertical'),
+    SensorModel('S8', 'Ref Grip', 'Posición referencia gripper'),
   ];
 
   // Actuadores (del PDF TM3DR24-A Engine Outputs / Relay Modules)
@@ -156,8 +156,8 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(_updateClock);
     });
-    _rotAnim = AnimationController(vsync: this,
-        duration: const Duration(milliseconds: 800));
+    _rotAnim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
     _logAudit('Sistema iniciado · Robot 3 Ejes TM3DR24-A', LogType.info);
     _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
     // S3, S6, S8 inician en posición de referencia
@@ -228,14 +228,30 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
   void _updateRobotVisuals(String id, bool val) {
     setState(() {
       switch (id) {
-        case 'RLY01': if (val) _baseAngle = (_baseAngle + 45) % 360; break;
-        case 'RLY02': if (val) _baseAngle = (_baseAngle - 45 + 360) % 360; break;
-        case 'RLY03': _armExtend = val ? 1.0 : _armExtend; break;
-        case 'RLY04': _armExtend = val ? 0.0 : _armExtend; break;
-        case 'RLY05': _zPosition = val ? 0.0 : _zPosition; break;
-        case 'RLY06': _zPosition = val ? 1.0 : _zPosition; break;
-        case 'RLY07': _gripperClosed = false; break;
-        case 'RLY08': _gripperClosed = true; break;
+        case 'RLY01':
+          if (val) _baseAngle = (_baseAngle + 45) % 360;
+          break;
+        case 'RLY02':
+          if (val) _baseAngle = (_baseAngle - 45 + 360) % 360;
+          break;
+        case 'RLY03':
+          _armExtend = val ? 1.0 : _armExtend;
+          break;
+        case 'RLY04':
+          _armExtend = val ? 0.0 : _armExtend;
+          break;
+        case 'RLY05':
+          _zPosition = val ? 0.0 : _zPosition;
+          break;
+        case 'RLY06':
+          _zPosition = val ? 1.0 : _zPosition;
+          break;
+        case 'RLY07':
+          _gripperClosed = false;
+          break;
+        case 'RLY08':
+          _gripperClosed = true;
+          break;
       }
     });
   }
@@ -243,23 +259,37 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
   // ── Ciclo automático pick & place ──────────────────────
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
-    setState(() { _isCycleRunning = true; _currentState = 0; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = true;
+      _currentState = 0;
+      _updatePermissions();
+    });
     _logAudit('INICIANDO CICLO AUTOMÁTICO · Pick & Place', LogType.info);
 
     try {
       // EST1: Girar base CW
-      setState(() { _currentState = 1; _sensor('S3').active = false; });
-      _logAudit('EST1 · RLY01 ON · Base girando CW a posición objetivo', LogType.info);
+      setState(() {
+        _currentState = 1;
+        _sensor('S3').active = false;
+      });
+      _logAudit('EST1 · RLY01 ON · Base girando CW a posición objetivo',
+          LogType.info);
       _toggleActuator('RLY01', true);
       await Future.delayed(const Duration(milliseconds: 500));
       setState(() => _baseAngle = 90);
       await Future.delayed(const Duration(seconds: 2));
       _toggleActuator('RLY01', false);
-      setState(() { _sensor('S3').active = true; _sensor('S2').active = true; });
+      setState(() {
+        _sensor('S3').active = true;
+        _sensor('S2').active = true;
+      });
       _logAudit('RLY01 OFF · Base en posición objetivo', LogType.audit);
 
       // EST2: Expandir brazo
-      setState(() { _currentState = 2; _sensor('S4').active = true; });
+      setState(() {
+        _currentState = 2;
+        _sensor('S4').active = true;
+      });
       _logAudit('EST2 · RLY03 ON · Expandiendo brazo gripper', LogType.info);
       _toggleActuator('RLY03', true);
       setState(() => _armExtend = 1.0);
@@ -268,8 +298,12 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       _logAudit('RLY03 OFF · Brazo extendido', LogType.audit);
 
       // EST3: Eje Z bajar
-      setState(() { _currentState = 3; _sensor('S6').active = false; });
-      _logAudit('EST3 · RLY06 ON · Eje Z bajando a posición de agarre', LogType.info);
+      setState(() {
+        _currentState = 3;
+        _sensor('S6').active = false;
+      });
+      _logAudit(
+          'EST3 · RLY06 ON · Eje Z bajando a posición de agarre', LogType.info);
       _toggleActuator('RLY06', true);
       setState(() => _zPosition = 1.0);
       await Future.delayed(const Duration(seconds: 2));
@@ -277,8 +311,12 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       _logAudit('RLY06 OFF · Eje Z en posición de agarre', LogType.audit);
 
       // EST4: Cerrar gripper
-      setState(() { _currentState = 4; _sensor('S8').active = false; });
-      _logAudit('EST4 · RLY08 ON · Cerrando gripper · Tomando pieza', LogType.success);
+      setState(() {
+        _currentState = 4;
+        _sensor('S8').active = false;
+      });
+      _logAudit('EST4 · RLY08 ON · Cerrando gripper · Tomando pieza',
+          LogType.success);
       _toggleActuator('RLY08', true);
       setState(() => _gripperClosed = true);
       await Future.delayed(const Duration(seconds: 1));
@@ -286,7 +324,9 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       _logAudit('Gripper cerrado · Pieza asegurada', LogType.success);
 
       // EST5: Eje Z subir
-      setState(() { _currentState = 5; });
+      setState(() {
+        _currentState = 5;
+      });
       _logAudit('EST5 · RLY05 ON · Eje Z subiendo con pieza', LogType.info);
       _toggleActuator('RLY05', true);
       setState(() => _zPosition = 0.0);
@@ -296,18 +336,29 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       _logAudit('RLY05 OFF · Eje Z en posición alta', LogType.audit);
 
       // EST6: Girar base CCW a destino
-      setState(() { _currentState = 6; _sensor('S3').active = false; });
-      _logAudit('EST6 · RLY02 ON · Base girando CCW a posición destino', LogType.info);
+      setState(() {
+        _currentState = 6;
+        _sensor('S3').active = false;
+      });
+      _logAudit('EST6 · RLY02 ON · Base girando CCW a posición destino',
+          LogType.info);
       _toggleActuator('RLY02', true);
       setState(() => _baseAngle = 0);
       await Future.delayed(const Duration(seconds: 2));
       _toggleActuator('RLY02', false);
-      setState(() { _sensor('S3').active = true; _sensor('S2').active = false; });
+      setState(() {
+        _sensor('S3').active = true;
+        _sensor('S2').active = false;
+      });
       _logAudit('RLY02 OFF · Base en posición de depósito', LogType.audit);
 
       // EST7: Eje Z bajar para depositar
-      setState(() { _currentState = 7; _sensor('S6').active = false; });
-      _logAudit('EST7 · RLY06 ON · Eje Z bajando · Depositando pieza', LogType.info);
+      setState(() {
+        _currentState = 7;
+        _sensor('S6').active = false;
+      });
+      _logAudit(
+          'EST7 · RLY06 ON · Eje Z bajando · Depositando pieza', LogType.info);
       _toggleActuator('RLY06', true);
       setState(() => _zPosition = 1.0);
       await Future.delayed(const Duration(seconds: 2));
@@ -315,13 +366,18 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       _logAudit('RLY06 OFF · Pieza en posición de depósito', LogType.audit);
 
       // EST8: Abrir gripper
-      setState(() { _currentState = 8; });
-      _logAudit('EST8 · RLY07 ON · Abriendo gripper · Liberando pieza', LogType.success);
+      setState(() {
+        _currentState = 8;
+      });
+      _logAudit('EST8 · RLY07 ON · Abriendo gripper · Liberando pieza',
+          LogType.success);
       _toggleActuator('RLY07', true);
       setState(() => _gripperClosed = false);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('RLY07', false);
-      setState(() { _sensor('S8').active = true; });
+      setState(() {
+        _sensor('S8').active = true;
+      });
 
       // Retraer y regresar a home
       _toggleActuator('RLY04', true);
@@ -333,67 +389,48 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       setState(() => _zPosition = 0.0);
       await Future.delayed(const Duration(seconds: 1));
       _toggleActuator('RLY05', false);
-      setState(() { _sensor('S6').active = true; _piezas++; });
-      _logAudit('✔ CICLO EXITOSO · Pick & Place completado · Pieza transportada', LogType.success);
-
+      setState(() {
+        _sensor('S6').active = true;
+        _piezas++;
+      });
+      _logAudit(
+          '✔ CICLO EXITOSO · Pick & Place completado · Pieza transportada',
+          LogType.success);
     } catch (e) {
       _logAudit('ERROR en la secuencia automática: $e', LogType.error);
     }
 
-    setState(() { _isCycleRunning = false; _currentState = 0; _updatePermissions(); });
+    setState(() {
+      _isCycleRunning = false;
+      _currentState = 0;
+      _updatePermissions();
+    });
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
-         child: Column(
-  crossAxisAlignment: CrossAxisAlignment.stretch,
-  children: [
-    _buildHeader(),
-    const SizedBox(height: 16),
-
-    _buildTopBar(),
-    const SizedBox(height: 10),
-
-    _buildRow1(),
-    const SizedBox(height: 10),
-    _buildRow2(),
-    const SizedBox(height: 8),
-  ],
-),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildTopBar(),
+              const SizedBox(height: 10),
+              _buildRow1(),
+              const SizedBox(height: 10),
+              _buildRow2(),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
@@ -404,14 +441,18 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('ROBOT 3 EJES',
-                  style: TextStyle(color: kMachine, fontSize: 18,
-                      fontWeight: FontWeight.bold, letterSpacing: 1.4)),
+                  style: TextStyle(
+                      color: kMachine,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.4)),
               //Text('Art. No. TM3DR24-A  ·  3D Robot 24V  ·  Pick & Place',
-                  //style: TextStyle(color: kText.withOpacity(0.5),
-                      //fontSize: 10, letterSpacing: 1)),
+              //style: TextStyle(color: kText.withOpacity(0.5),
+              //fontSize: 10, letterSpacing: 1)),
             ]),
-            Text(_clock, style: const TextStyle(
-                color: kText, fontSize: 14, fontFamily: 'monospace')),
+            Text(_clock,
+                style: const TextStyle(
+                    color: kText, fontSize: 14, fontFamily: 'monospace')),
           ],
         ),
       );
@@ -419,39 +460,48 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
   Widget _buildTopBar() => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: kPanel, border: Border.all(color: kBorder),
+            color: kPanel,
+            border: Border.all(color: kBorder),
             borderRadius: BorderRadius.circular(8)),
-        child: Wrap(spacing: 14, runSpacing: 10,
+        child: Wrap(
+          spacing: 14,
+          runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-          /*   _labeledSelect('Rol:', _role, {
+            /*   _labeledSelect('Rol:', _role, {
               'Ingeniero': 'Ingeniero (Control Total)',
               'Operador': 'Operador',
             }, (v) { setState(() => _role = v!); _updatePermissions(); }),
  */
 
-
-
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
               'auto': 'Automático',
-            }, (v) { setState(() => _mode = v!); _updatePermissions(); }),
-           /*  _labeledSelect('Conexión:', 'sim', {
+            }, (v) {
+              setState(() => _mode = v!);
+              _updatePermissions();
+            }),
+            /*  _labeledSelect('Conexión:', 'sim', {
               'sim': 'Simulación Local',
               'lan': 'Red Local (KC868)',
             }, (_) {}), */
-             ElevatedButton.icon(
+            ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
-              icon: Icon(_isCycleRunning ? Icons.stop : Icons.smart_toy, size: 16),
-              label: Text(_isCycleRunning ? 'Ejecutando Pick & Place...' : 'Iniciar Ciclo Automático'),
+              icon: Icon(_isCycleRunning ? Icons.stop : Icons.smart_toy,
+                  size: 16),
+              label: Text(_isCycleRunning
+                  ? 'Ejecutando Pick & Place...'
+                  : 'Iniciar Ciclo Automático'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen, foregroundColor: kBg,
+                backgroundColor: kGreen,
+                foregroundColor: kBg,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
-            ), 
-          /*   ElevatedButton.icon(
+            ),
+            /*   ElevatedButton.icon(
               onPressed: () => _logAudit('Auditoría exportada.', LogType.audit),
               icon: const Icon(Icons.download, size: 16),
               label: const Text('Exportar Auditoría CSV'),
@@ -467,22 +517,27 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
       );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
-      ValueChanged<String?> fn) =>
+          ValueChanged<String?> fn) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
         Text(lbl, style: const TextStyle(color: kText, fontSize: 12)),
         const SizedBox(width: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(color: kBg, border: Border.all(color: kCyan),
+          decoration: BoxDecoration(
+              color: kBg,
+              border: Border.all(color: kCyan),
               borderRadius: BorderRadius.circular(4)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: val, dropdownColor: kPanel,
+              value: val,
+              dropdownColor: kPanel,
               style: const TextStyle(color: kCyan, fontSize: 12),
               icon: const Icon(Icons.arrow_drop_down, color: kCyan, size: 18),
               isDense: true,
-              items: items.entries.map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+              items: items.entries
+                  .map((e) =>
+                      DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .toList(),
               onChanged: fn,
             ),
           ),
@@ -492,13 +547,15 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
   Widget _kpiBox(String label, String value, Color color) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-            color: color.withOpacity(0.08), border: Border.all(color: color),
+            color: color.withOpacity(0.08),
+            border: Border.all(color: color),
             borderRadius: BorderRadius.circular(6)),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(label, style: const TextStyle(color: kText, fontSize: 10)),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: color, fontSize: 22,
-              fontWeight: FontWeight.bold)),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 22, fontWeight: FontWeight.bold)),
         ]),
       );
 
@@ -523,11 +580,12 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           // Vista superior (rotación base)
           Expanded(
             child: Column(children: [
-              const Text('Vista Superior', style: TextStyle(
-                  color: Color(0xFF546E7A), fontSize: 10)),
+              const Text('Vista Superior',
+                  style: TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
               const SizedBox(height: 8),
               SizedBox(
-                width: 180, height: 200,
+                width: 180,
+                height: 200,
                 child: CustomPaint(
                   painter: _RobotTopViewPainter(
                     baseAngle: _baseAngle,
@@ -542,19 +600,22 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
               Text('Base: ${_baseAngle.toStringAsFixed(0)}°',
                   style: TextStyle(
                       color: _act('RLY01').on || _act('RLY02').on
-                          ? kMachine : const Color(0xFF546E7A),
-                      fontSize: 10, fontWeight: FontWeight.bold)),
+                          ? kMachine
+                          : const Color(0xFF546E7A),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
             ]),
           ),
           Container(width: 1, color: kBorder),
           // Vista frontal (eje Z + gripper)
           Expanded(
             child: Column(children: [
-              const Text('Vista Frontal', style: TextStyle(
-                  color: Color(0xFF546E7A), fontSize: 10)),
+              const Text('Vista Frontal',
+                  style: TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
               const SizedBox(height: 8),
               SizedBox(
-                width: 160, height: 200,
+                width: 160,
+                height: 200,
                 child: CustomPaint(
                   painter: _RobotFrontViewPainter(
                     zPosition: _zPosition,
@@ -567,11 +628,13 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
                   ),
                 ),
               ),
-              Text('Eje Z: ${(_zPosition * 100).toStringAsFixed(0)}%  '
-                   'Gripper: ${_gripperClosed ? 'CERRADO' : 'ABIERTO'}',
+              Text(
+                  'Eje Z: ${(_zPosition * 100).toStringAsFixed(0)}%  '
+                  'Gripper: ${_gripperClosed ? 'CERRADO' : 'ABIERTO'}',
                   style: TextStyle(
                       color: _gripperClosed ? kGreen : const Color(0xFF546E7A),
-                      fontSize: 10, fontWeight: FontWeight.bold)),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
             ]),
           ),
         ],
@@ -596,36 +659,44 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: s.active ? kGreen.withOpacity(0.07) : Colors.black.withOpacity(0.3),
-          border: Border.all(
-              color: s.active ? kGreen.withOpacity(0.4) : kBorder),
-          borderRadius: BorderRadius.circular(4)),
+            color: s.active
+                ? kGreen.withOpacity(0.07)
+                : Colors.black.withOpacity(0.3),
+            border:
+                Border.all(color: s.active ? kGreen.withOpacity(0.4) : kBorder),
+            borderRadius: BorderRadius.circular(4)),
         child: Row(children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 10, height: 10,
+            width: 10,
+            height: 10,
             decoration: BoxDecoration(
-              shape: BoxShape.circle, color: color,
-              boxShadow: s.active
-                  ? [BoxShadow(color: color.withOpacity(0.8), blurRadius: 8)]
-                  : null),
+                shape: BoxShape.circle,
+                color: color,
+                boxShadow: s.active
+                    ? [BoxShadow(color: color.withOpacity(0.8), blurRadius: 8)]
+                    : null),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Column(
+          Expanded(
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${s.id}: ${s.label}',
                   style: TextStyle(
                       color: s.active ? kGreen : kText,
-                      fontSize: 12, fontWeight: FontWeight.bold)),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
               Text(s.description,
-                  style: const TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
+                  style:
+                      const TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
             ],
           )),
           Text(s.active ? 'ON' : 'OFF',
               style: TextStyle(
                   color: s.active ? kGreen : const Color(0xFF546E7A),
-                  fontSize: 10, fontWeight: FontWeight.bold)),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold)),
         ]),
       ),
     );
@@ -645,29 +716,36 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
 
   Widget _buildActuatorsPanel() => _panel(
         title: 'Actuadores · Base y Brazo',
-        child: Column(mainAxisSize: MainAxisSize.min,
-          children: _actuators.sublist(0, 4).map(_actuatorRow).toList()),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _actuators.sublist(0, 4).map(_actuatorRow).toList()),
       );
 
   Widget _buildActuatorsPanel2() => _panel(
         title: 'Actuadores · Eje Z y Gripper',
-        child: Column(mainAxisSize: MainAxisSize.min,
-          children: _actuators.sublist(4).map(_actuatorRow).toList()),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _actuators.sublist(4).map(_actuatorRow).toList()),
       );
 
   Widget _actuatorRow(ActuatorModel a) => Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: a.on ? kMachine.withOpacity(0.08) : Colors.black.withOpacity(0.3),
-          border: Border.all(color: a.on ? kMachine.withOpacity(0.5) : kBorder),
-          borderRadius: BorderRadius.circular(4)),
+            color: a.on
+                ? kMachine.withOpacity(0.08)
+                : Colors.black.withOpacity(0.3),
+            border:
+                Border.all(color: a.on ? kMachine.withOpacity(0.5) : kBorder),
+            borderRadius: BorderRadius.circular(4)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(a.id,
-                style: TextStyle(
-                    color: a.on ? kMachine : kText,
-                    fontSize: 12, fontWeight: FontWeight.bold))),
+            Expanded(
+                child: Text(a.id,
+                    style: TextStyle(
+                        color: a.on ? kMachine : kText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold))),
             Transform.scale(
               scale: 0.75,
               child: Switch(
@@ -689,7 +767,8 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
         title: 'Auditoría (Audit Trail) y Alertas',
         child: Container(
           height: 250,
-          decoration: BoxDecoration(color: kBg,
+          decoration: BoxDecoration(
+              color: kBg,
               border: Border.all(color: kBorder),
               borderRadius: BorderRadius.circular(4)),
           padding: const EdgeInsets.all(8),
@@ -700,12 +779,15 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
               final l = _logs[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 2),
-                child: RichText(text: TextSpan(
+                child: RichText(
+                    text: TextSpan(
                   style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                   children: [
-                    TextSpan(text: '[${l.time}] ',
+                    TextSpan(
+                        text: '[${l.time}] ',
                         style: const TextStyle(color: Color(0xFF546E7A))),
-                    TextSpan(text: '[${l.user}] - ',
+                    TextSpan(
+                        text: '[${l.user}] - ',
                         style: const TextStyle(color: kCyan)),
                     TextSpan(text: l.message, style: TextStyle(color: l.color)),
                   ],
@@ -724,25 +806,39 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           Row(
             children: List.generate(8, (i) {
               final state = i + 1;
-              final done   = _currentState > state;
+              final done = _currentState > state;
               final active = _currentState == state;
-              return Expanded(child: Column(children: [
+              return Expanded(
+                  child: Column(children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   height: 6,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
-                    color: done ? kGreen : active ? kMachine : kBorder,
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: active
-                        ? [BoxShadow(color: kMachine.withOpacity(0.6), blurRadius: 6)]
-                        : null),
+                      color: done
+                          ? kGreen
+                          : active
+                              ? kMachine
+                              : kBorder,
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: active
+                          ? [
+                              BoxShadow(
+                                  color: kMachine.withOpacity(0.6),
+                                  blurRadius: 6)
+                            ]
+                          : null),
                 ),
                 const SizedBox(height: 4),
                 Text('E$state',
                     style: TextStyle(
-                        color: done ? kGreen : active ? kMachine : const Color(0xFF546E7A),
-                        fontSize: 8, fontWeight: FontWeight.bold)),
+                        color: done
+                            ? kGreen
+                            : active
+                                ? kMachine
+                                : const Color(0xFF546E7A),
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold)),
               ]));
             }),
           ),
@@ -759,7 +855,8 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
         height: height,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: kPanel, border: Border.all(color: kBorder),
+            color: kPanel,
+            border: Border.all(color: kBorder),
             borderRadius: BorderRadius.circular(8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -769,8 +866,11 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
               padding: const EdgeInsets.only(bottom: 8),
               decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: kBorder))),
-              child: Text(title, style: TextStyle(color: titleColor,
-                  fontSize: 12, fontWeight: FontWeight.bold)),
+              child: Text(title,
+                  style: TextStyle(
+                      color: titleColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             child,
@@ -804,13 +904,17 @@ class _RobotTopViewPainter extends CustomPainter {
     final rad = baseAngle * pi / 180;
 
     // Base circular
-    canvas.drawCircle(Offset(cx, cy), 30,
+    canvas.drawCircle(
+        Offset(cx, cy),
+        30,
         Paint()
           ..color = (rly01 || rly02)
               ? kMachine.withOpacity(0.3)
               : const Color(0xFF1A2233)
           ..style = PaintingStyle.fill);
-    canvas.drawCircle(Offset(cx, cy), 30,
+    canvas.drawCircle(
+        Offset(cx, cy),
+        30,
         Paint()
           ..color = (rly01 || rly02) ? kMachine : const Color(0xFF334455)
           ..style = PaintingStyle.stroke
@@ -818,9 +922,11 @@ class _RobotTopViewPainter extends CustomPainter {
 
     // Texto M1
     final tp = TextPainter(
-      text: TextSpan(text: 'M1',
-          style: TextStyle(color: kText.withOpacity(0.6), fontSize: 10)),
-      textDirection: TextDirection.ltr)..layout();
+        text: TextSpan(
+            text: 'M1',
+            style: TextStyle(color: kText.withOpacity(0.6), fontSize: 10)),
+        textDirection: TextDirection.ltr)
+      ..layout();
     tp.paint(canvas, Offset(cx - 9, cy - 6));
 
     // Brazo extendido
@@ -829,41 +935,45 @@ class _RobotTopViewPainter extends CustomPainter {
     final by = cy + armLen * sin(rad);
 
     canvas.drawLine(
-      Offset(cx, cy), Offset(bx, by),
-      Paint()
-        ..color = rly03 ? kMachine : const Color(0xFF334455)
-        ..strokeWidth = 6
-        ..strokeCap = StrokeCap.round);
+        Offset(cx, cy),
+        Offset(bx, by),
+        Paint()
+          ..color = rly03 ? kMachine : const Color(0xFF334455)
+          ..strokeWidth = 6
+          ..strokeCap = StrokeCap.round);
 
     // Gripper
     canvas.drawCircle(
-      Offset(bx, by), gripperClosed ? 6 : 10,
-      Paint()
-        ..color = gripperClosed
-            ? kGreen.withOpacity(0.5)
-            : const Color(0xFF1A2233)
-        ..style = PaintingStyle.fill);
+        Offset(bx, by),
+        gripperClosed ? 6 : 10,
+        Paint()
+          ..color =
+              gripperClosed ? kGreen.withOpacity(0.5) : const Color(0xFF1A2233)
+          ..style = PaintingStyle.fill);
     canvas.drawCircle(
-      Offset(bx, by), gripperClosed ? 6 : 10,
-      Paint()
-        ..color = gripperClosed ? kGreen : const Color(0xFF334455)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2);
+        Offset(bx, by),
+        gripperClosed ? 6 : 10,
+        Paint()
+          ..color = gripperClosed ? kGreen : const Color(0xFF334455)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2);
 
     // Ángulo referencia
     final ap = TextPainter(
-      text: TextSpan(
-          text: '${baseAngle.toStringAsFixed(0)}°',
-          style: TextStyle(
-              color: (rly01 || rly02) ? kMachine : kText.withOpacity(0.3),
-              fontSize: 9)),
-      textDirection: TextDirection.ltr)..layout();
+        text: TextSpan(
+            text: '${baseAngle.toStringAsFixed(0)}°',
+            style: TextStyle(
+                color: (rly01 || rly02) ? kMachine : kText.withOpacity(0.3),
+                fontSize: 9)),
+        textDirection: TextDirection.ltr)
+      ..layout();
     ap.paint(canvas, Offset(cx - 10, size.height - 18));
   }
 
   @override
   bool shouldRepaint(covariant _RobotTopViewPainter old) =>
-      old.baseAngle != baseAngle || old.armExtend != armExtend ||
+      old.baseAngle != baseAngle ||
+      old.armExtend != armExtend ||
       old.gripperClosed != gripperClosed;
 }
 
@@ -892,17 +1002,17 @@ class _RobotFrontViewPainter extends CustomPainter {
     // Columna vertical
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - 4, 10, 8, colH),
-          const Radius.circular(4)),
-      Paint()..color = const Color(0xFF334455)..style = PaintingStyle.fill,
+          Rect.fromLTWH(cx - 4, 10, 8, colH), const Radius.circular(4)),
+      Paint()
+        ..color = const Color(0xFF334455)
+        ..style = PaintingStyle.fill,
     );
 
     // Soporte del brazo (M3 / eje Z)
     final zY = 10 + zPosition * (colH - 30);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - 16, zY, 32, 18),
-          const Radius.circular(4)),
+          Rect.fromLTWH(cx - 16, zY, 32, 18), const Radius.circular(4)),
       Paint()
         ..color = (rly05 || rly06)
             ? kMachine.withOpacity(0.3)
@@ -911,8 +1021,7 @@ class _RobotFrontViewPainter extends CustomPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - 16, zY, 32, 18),
-          const Radius.circular(4)),
+          Rect.fromLTWH(cx - 16, zY, 32, 18), const Radius.circular(4)),
       Paint()
         ..color = (rly05 || rly06) ? kMachine : const Color(0xFF334455)
         ..style = PaintingStyle.stroke
@@ -933,16 +1042,15 @@ class _RobotFrontViewPainter extends CustomPainter {
     // Gripper (vista frontal)
     final gpW = gripperClosed ? 8.0 : 14.0;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13),
+      RRect.fromRectAndRadius(Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13),
           const Radius.circular(3)),
       Paint()
-        ..color = gripperClosed ? kGreen.withOpacity(0.4) : const Color(0xFF1A2233)
+        ..color =
+            gripperClosed ? kGreen.withOpacity(0.4) : const Color(0xFF1A2233)
         ..style = PaintingStyle.fill,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13),
+      RRect.fromRectAndRadius(Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13),
           const Radius.circular(3)),
       Paint()
         ..color = gripperClosed ? kGreen : const Color(0xFF334455)
@@ -951,11 +1059,24 @@ class _RobotFrontViewPainter extends CustomPainter {
     );
 
     // Flecha dirección Z
-    final arrColor = rly06 ? kRed : rly05 ? kGreen : kText.withOpacity(0.2);
+    final arrColor = rly06
+        ? kRed
+        : rly05
+            ? kGreen
+            : kText.withOpacity(0.2);
     canvas.drawLine(
       Offset(cx - 25, zY + 9),
-      Offset(cx - 25, rly06 ? zY + 20 : rly05 ? zY - 10 : zY + 9),
-      Paint()..color = arrColor..strokeWidth = 2..strokeCap = StrokeCap.round,
+      Offset(
+          cx - 25,
+          rly06
+              ? zY + 20
+              : rly05
+                  ? zY - 10
+                  : zY + 9),
+      Paint()
+        ..color = arrColor
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
     );
     if (rly06 || rly05) {
       final arrowY = rly06 ? zY + 20 : zY - 10;
@@ -966,28 +1087,34 @@ class _RobotFrontViewPainter extends CustomPainter {
           ..lineTo(cx - 29, arrowY - arrowDir * 6.0)
           ..lineTo(cx - 21, arrowY - arrowDir * 6.0)
           ..close(),
-        Paint()..color = arrColor..style = PaintingStyle.fill,
+        Paint()
+          ..color = arrColor
+          ..style = PaintingStyle.fill,
       );
     }
 
     // Base
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - 20, size.height - 18, 40, 10),
+      RRect.fromRectAndRadius(Rect.fromLTWH(cx - 20, size.height - 18, 40, 10),
           const Radius.circular(4)),
-      Paint()..color = const Color(0xFF334455)..style = PaintingStyle.fill,
+      Paint()
+        ..color = const Color(0xFF334455)
+        ..style = PaintingStyle.fill,
     );
 
     // Etiqueta M3
     final tp = TextPainter(
-      text: TextSpan(
-          text: 'M3', style: TextStyle(color: kText.withOpacity(0.4), fontSize: 8)),
-      textDirection: TextDirection.ltr)..layout();
+        text: TextSpan(
+            text: 'M3',
+            style: TextStyle(color: kText.withOpacity(0.4), fontSize: 8)),
+        textDirection: TextDirection.ltr)
+      ..layout();
     tp.paint(canvas, Offset(cx - 5, zY + 5));
   }
 
   @override
   bool shouldRepaint(covariant _RobotFrontViewPainter old) =>
-      old.zPosition != zPosition || old.gripperClosed != gripperClosed ||
+      old.zPosition != zPosition ||
+      old.gripperClosed != gripperClosed ||
       old.armExtend != armExtend;
 }
