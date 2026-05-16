@@ -71,10 +71,6 @@ class MyApp extends StatelessWidget {
 
 
 
- 
-
-
-
 // ============================================================
 //  HITECH INGENIUM  ·  SCADA MASTER  ·  main.dart
 //  Layout responsivo + nuevas secciones del menú lateral
@@ -155,6 +151,7 @@ enum AppView {
   analytics,
   usuarios,
   nube,
+  chatbot,
 }
 
 class LogEntry {
@@ -187,7 +184,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
   String _role = 'Ingeniero';
   String _mode = 'manual';
   String _clock = '';
-  bool _chatOpen = false;
   bool _chatLoading = false;
   late Timer _clockTimer;
 
@@ -272,10 +268,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
       return 'Centro Prensado (TMPUM24-A)\n• Motor prensa bidireccional';
     if (ql.contains('conexion') || ql.contains('red'))
       return 'Módulo Conexiones: gestiona y monitorea las maquetas disponibles en la red.';
-
-
-
-
+    if (ql.contains('diagnostico'))
+        return 'Diagnóstico de Conexiones: visualiza el flujo y estado de la red en tiempo real.';
     if (ql.contains('historial') || ql.contains('log'))
       return 'Historial de Eventos: consulta y filtra todos los eventos del sistema.';
     if (ql.contains('analytic') || ql.contains('reporte'))
@@ -322,6 +316,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         return 'Gestión de Usuarios';
       case AppView.nube:
         return 'Cloud Sync';
+      case AppView.chatbot:
+        return 'Asistente IA Chatbot';
     }
   }
 
@@ -341,8 +337,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
               child: SafeArea(child: _sidebarContent(layout)),
             ),
       body: SafeArea(
-        child: Stack(children: [
-          Row(children: [
+        child: Row(children: [
             if (showSidebar)
               Container(
                 width: layout == _Layout.tablet ? 200 : 248,
@@ -365,8 +360,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
               ]),
             ),
           ]),
-          _chatbot(layout),
-        ]),
       ),
     );
   }
@@ -421,6 +414,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         _navTile('📈', 'Analytics', AppView.analytics, kIndigo, compact),
         _navTile('👥', 'Usuarios', AppView.usuarios, kPink, compact),
         _navTile('☁️', 'Cloud Sync', AppView.nube, kCyan, compact),
+        _navTile('🤖', 'Chatbot', AppView.chatbot, kIndigo, compact),
         const SizedBox(height: 12),
       ]),
     );
@@ -781,6 +775,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         return const UsuariosScreen();
       case AppView.nube:
         return const CloudSyncDashboard();
+      case AppView.chatbot:
+        return _buildChatbotView();
       case AppView.robot:
         // TODO: Handle this case.
         throw UnimplementedError();
@@ -909,136 +905,80 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         ),
       );
 
-  // ── Chatbot ────────────────────────────────────────────────────────────────
-  Widget _chatbot(_Layout layout) {
-    final fabBottom = layout == _Layout.mobile ? 12.0 : 18.0;
-    final fabRight = layout == _Layout.mobile ? 10.0 : 16.0;
-    final chatW = layout == _Layout.mobile
-        ? MediaQuery.of(context).size.width * 0.88
-        : 310.0;
-
-    return Positioned(
-      bottom: fabBottom,
-      right: fabRight,
-      child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (_chatOpen)
-              Container(
-                width: chatW,
-                height: 400,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: kPanelBg,
-                  border: Border.all(color: kBorder),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.black54,
-                        blurRadius: 16,
-                        offset: Offset(0, 6))
-                  ],
+  // ── Chatbot View ──────────────────────────────────────────────────────────
+  Widget _buildChatbotView() {
+    _scrollChat();
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: kSidebar,
+              border: Border.all(color: kBorder),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListView.builder(
+              controller: _chatSc,
+              padding: const EdgeInsets.all(10),
+              itemCount: _chatMsgs.length + (_chatLoading ? 1 : 0),
+              itemBuilder: (_, i) {
+                if (_chatLoading && i == _chatMsgs.length) {
+                  return _bubble('', false, typing: true);
+                }
+                final m = _chatMsgs[i];
+                return _bubble(m.text, m.isUser);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+              color: kPanelBg,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: kBorder)),
+          child: Row(children: [
+            Expanded(
+              child: TextField(
+                controller: _chatCtrl,
+                style: const TextStyle(color: kTextMain, fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Pregunta algo al Asistente IA...',
+                  hintStyle: const TextStyle(color: kTextMuted, fontSize: 12),
+                  filled: true,
+                  fillColor: kBgDark,
+                  isDense: true,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: kBorder)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: kBorder)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: kCyan)),
                 ),
-                child: Column(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    decoration: const BoxDecoration(
-                        color: kCyan,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12))),
-                    child: Row(children: [
-                      const Text('Hitech Bot 🤖',
-                          style: TextStyle(
-                              color: kBgDark,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13)),
-                      const Spacer(),
-                      GestureDetector(
-                          onTap: () => setState(() => _chatOpen = false),
-                          child: const Icon(Icons.close,
-                              color: kBgDark, size: 16)),
-                    ]),
-                  ),
-                  Expanded(
-                      child: Container(
-                    color: kSidebar,
-                    child: ListView.builder(
-                      controller: _chatSc,
-                      padding: const EdgeInsets.all(10),
-                      itemCount: _chatMsgs.length + (_chatLoading ? 1 : 0),
-                      itemBuilder: (_, i) {
-                        if (_chatLoading && i == _chatMsgs.length)
-                          return _bubble('', false, typing: true);
-                        final m = _chatMsgs[i];
-                        return _bubble(m.text, m.isUser);
-                      },
-                    ),
-                  )),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                        color: kPanelBg,
-                        border: Border(top: BorderSide(color: kBorder))),
-                    child: Row(children: [
-                      Expanded(
-                          child: TextField(
-                        controller: _chatCtrl,
-                        style: const TextStyle(color: kTextMain, fontSize: 12),
-                        decoration: InputDecoration(
-                          hintText: 'Pregunta algo...',
-                          hintStyle:
-                              const TextStyle(color: kTextMuted, fontSize: 11),
-                          filled: true,
-                          fillColor: kBgDark,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 8),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: const BorderSide(color: kBorder)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: const BorderSide(color: kBorder)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: const BorderSide(color: kCyan)),
-                        ),
-                        onSubmitted: (_) => _sendChat(),
-                      )),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: _sendChat,
-                        child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: kCyan,
-                                borderRadius: BorderRadius.circular(6)),
-                            child: const Icon(Icons.send,
-                                color: kBgDark, size: 14)),
-                      ),
-                    ]),
-                  ),
-                ]),
-              ),
-            ElevatedButton.icon(
-              onPressed: () => setState(() => _chatOpen = !_chatOpen),
-              icon: const Text('💬', style: TextStyle(fontSize: 14)),
-              label: const Text('Asistente IA',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kCyan,
-                foregroundColor: kBgDark,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28)),
-                elevation: 6,
+                onSubmitted: (_) => _sendChat(),
               ),
             ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _sendChat,
+              child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                      color: kCyan, borderRadius: BorderRadius.circular(6)),
+                  child: const Icon(Icons.send_rounded,
+                      color: kBgDark, size: 20)),
+            ),
           ]),
+        ),
+      ]),
     );
   }
 
