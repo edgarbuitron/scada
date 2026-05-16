@@ -1,4 +1,3 @@
-// TODO Implement this library.
 // ============================================================
 //  CENTRO DE MAQUINADOS SCADA 4.0  –  Flutter
 //  Art. No. TMINL24-A  –  Indexed Line 24V
@@ -6,8 +5,7 @@
 // ============================================================
 import 'dart:async';
 import 'package:flutter/material.dart';
-
-//void main() => runApp(const ScadaMaquinadosScreen());
+import 'package:flutter/services.dart';
 
 // ── Paleta ────────────────────────────────────────────────
 const Color kBg = Color(0xFF081014);
@@ -66,14 +64,7 @@ class ActuatorModel {
       {this.on = false, this.disabled = false});
 }
 
-// ── Estados del ciclo (del código MicroPython) ────────────
-// EST1: P1 bit0 (val 1)  → M1 enciende banda entrada
-// EST2: P2 bit1 (val 2)  → M1 apaga, M2 empuja pieza
-// EST3: R1 bit2 (val 4)  → M2 apaga, M3 mueve banda 2
-// EST4: P3 bit3 (val 8)  → M3 apaga, M4 fresadora, M3+M6 bandas
-// EST5: P4 bit4 (val 16) → M6 apaga, M5 taladro, M7 empuja salida
-// EST6: R2 bit5 (val 32) → M7 apaga, M8 banda salida
-// EST7: P5 bit6 (val 64) → M8 apaga, ciclo completo
+// ── Estados del ciclo ────────────
 const List<String> kEstados = [
   'Sin iniciar',
   'EST1 · Pieza nueva detectada en P1',
@@ -103,8 +94,9 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
   bool _isCycleRunning = false;
   int _currentState = 0;
   int _piezas = 0;
+  
+  final TextEditingController _piezasController = TextEditingController(text: '1');
 
-  // Sensores (del PDF TMINL24-A Engine Inputs)
   final List<SensorModel> _sensors = [
     SensorModel('P1', 'P1', 'Pieza entrando a línea indexada'),
     SensorModel('P2', 'P2', 'Pieza lista para empujador 1'),
@@ -115,7 +107,6 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     SensorModel('P5', 'P5', 'Pieza en área de producto terminado'),
   ];
 
-  // Actuadores (del PDF TMINL24-A Engine Outputs)
   final List<ActuatorModel> _actuators = [
     ActuatorModel('M1', 'M1', 'Banda entrada (Entrance conveyor)'),
     ActuatorModel('M2', 'M2', 'Empujador 1 · Pusher 1 activate'),
@@ -139,14 +130,11 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     super.initState();
     _updateClock();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(_updateClock);
+      if(mounted) setState(_updateClock);
     });
-    _logAudit(
-        'Sistema iniciado · Centro de Maquinados TMINL24-A', LogType.info);
+    _logAudit('Sistema iniciado · Centro de Maquinados TMINL24-A', LogType.info);
     _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
-    // R1 y R2 inician en home (activos)
-    _sensor('R1').active = true;
-    _sensor('R2').active = true;
+    _resetToHome(log: false);
   }
 
   void _updateClock() {
@@ -159,6 +147,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
   void dispose() {
     _clockTimer.cancel();
     _logScroll.dispose();
+    _piezasController.dispose();
     super.dispose();
   }
 
@@ -166,13 +155,15 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     final n = DateTime.now();
     final t =
         '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-    setState(() => _logs.add(LogEntry(t, _role, msg, type)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_logScroll.hasClients) {
-        _logScroll.animateTo(_logScroll.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
-    });
+    if(mounted) {
+      setState(() => _logs.add(LogEntry(t, _role, msg, type)));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_logScroll.hasClients) {
+          _logScroll.animateTo(_logScroll.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        }
+      });
+    }
   }
 
   void _updatePermissions() {
@@ -191,156 +182,212 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
       return;
     }
     final s = _sensor(id);
-    setState(() => s.active = !s.active);
+    if(mounted) setState(() => s.active = !s.active);
     _logAudit(
         'Simulación Manual: Sensor ${s.id} forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}',
         LogType.audit);
   }
 
   void _toggleActuator(String id, bool val) {
-    setState(() => _act(id).on = val);
-    if (!_isCycleRunning) {
-      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', LogType.audit);
+    if(mounted) {
+      setState(() => _act(id).on = val);
+      if (!_isCycleRunning) {
+        _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', LogType.audit);
+      }
+    }
+  }
+  
+  void _resetToHome({bool log = true}) {
+    if (log) _logAudit('Restableciendo sistema a estado inicial...', LogType.audit);
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        for (final a in _actuators) {
+          a.on = false;
+        }
+        for (final s in _sensors) {
+          s.active = false;
+        }
+        _sensor('R1').active = true; 
+        _sensor('R2').active = true; 
+      });
+    }
+    if (log) _logAudit('Sistema restablecido a la posición HOME.', LogType.success);
+  }
+
+  void _triggerEmergency() {
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        for (final a in _actuators) {
+          a.on = false;
+        }
+      });
+    }
+    _logAudit('¡PARO DE EMERGENCIA ACTIVADO! Todos los actuadores apagados.', LogType.error);
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: kPanel,
+          title: const Text('⚠ PARO DE EMERGENCIA', style: TextStyle(color: kRed, fontSize: 15)),
+          content: const Text('Todos los actuadores han sido desactivados.\nRevise la máquina antes de reiniciar.', style: TextStyle(color: kText)),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: kCyan)))
+          ],
+        ),
+      );
     }
   }
 
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
-    setState(() {
-      _isCycleRunning = true;
-      _currentState = 0;
-      _updatePermissions();
-    });
-    _logAudit('INICIANDO CICLO AUTOMÁTICO DE MAQUINADOS...', LogType.info);
+    
+    final int numPiezas = int.tryParse(_piezasController.text) ?? 0;
+    if (numPiezas <= 0) {
+      _logAudit('ERROR: El número de piezas debe ser mayor a 0.', LogType.error);
+      return;
+    }
 
-    try {
-      // EST1: P1 detectado → M1 banda entrada
+    if(mounted) {
       setState(() {
-        _currentState = 1;
-        _sensor('P1').active = true;
+        _isCycleRunning = true;
+        _updatePermissions();
       });
-      _logAudit(
-          'EST1 · P1 detectado · M1 enciende banda entrada', LogType.info);
+    }
+    _logAudit('══ INICIANDO CICLO AUTOMÁTICO PARA $numPiezas PIEZAS ══', LogType.info);
+    
+    for (int i = 0; i < numPiezas; i++) {
+      if (!_isCycleRunning) break;
+       _logAudit('--- Procesando pieza ${i + 1} de $numPiezas ---', LogType.info);
+      await _runSingleCycle();
+      if (!_isCycleRunning) {
+        _logAudit('Ciclo interrumpido por PARO DE EMERGENCIA.', LogType.error);
+        break;
+      }
+    }
+
+    if(mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        _updatePermissions();
+      });
+    }
+     _logAudit('══ CICLO AUTOMÁTICO FINALIZADO ══', LogType.info);
+  }
+
+  Future<void> _runSingleCycle() async {
+     try {
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 1; _sensor('P1').active = true; });
+      _logAudit('EST1 · P1 detectado · M1 enciende banda entrada', LogType.info);
       _toggleActuator('M1', true);
       await Future.delayed(const Duration(seconds: 2));
+      
+      if (!_isCycleRunning || !mounted) return;
       setState(() => _sensor('P1').active = false);
-
-      // EST2: P2 detectado → M1 apaga, M2 empuja
-      setState(() {
-        _currentState = 2;
-        _sensor('P2').active = true;
-      });
-      _logAudit(
-          'EST2 · P2 detectado · M1 apaga · M2 empuja pieza', LogType.info);
+      setState(() { _currentState = 2; _sensor('P2').active = true; });
+      _logAudit('EST2 · P2 detectado · M1 apaga · M2 empuja pieza', LogType.info);
       _toggleActuator('M1', false);
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M2', true);
       setState(() => _sensor('R1').active = false);
       _logAudit('M2 ON · Empujador 1 activado', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
-
-      // EST3: R1 detectado → M2 apaga, M3 mueve banda 2
-      setState(() {
-        _currentState = 3;
-        _sensor('P2').active = false;
-      });
-      _logAudit(
-          'EST3 · R1 en reposo · M2 apaga · M3 banda 2 activa', LogType.info);
+      
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 3; _sensor('P2').active = false; });
+      _logAudit('EST3 · R1 en reposo · M2 apaga · M3 banda 2 activa', LogType.info);
       _toggleActuator('M2', false);
       setState(() => _sensor('R1').active = true);
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M3', true);
-      _logAudit(
-          'M3 ON · Banda 2 moviendo pieza hacia fresadora', LogType.success);
+      _logAudit('M3 ON · Banda 2 moviendo pieza hacia fresadora', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
-      // EST4: P3 detectado → M3 apaga, M4 fresar, M3+M6 avanzar
-      setState(() {
-        _currentState = 4;
-        _sensor('P3').active = true;
-      });
-      _logAudit('EST4 · P3 detectado · Pieza en fresadora · Fresando...',
-          LogType.info);
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 4; _sensor('P3').active = true; });
+      _logAudit('EST4 · P3 detectado · Fresando...', LogType.info);
       _toggleActuator('M3', false);
       await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M4', true);
-      _logAudit(
-          'M4 ON · Motor fresadora activo · Fresando pieza', LogType.success);
+      _logAudit('M4 ON · Fresando pieza', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M4', false);
       _logAudit('M4 OFF · Fresado completado', LogType.audit);
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M3', true);
       _toggleActuator('M6', true);
       setState(() => _sensor('P3').active = false);
-      _logAudit(
-          'M3+M6 ON · Avanzando pieza hacia taladradora', LogType.success);
+      _logAudit('M3+M6 ON · Avanzando pieza hacia taladradora', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
-      // EST5: P4 detectado → M5 taladro, M7 empuja salida
-      setState(() {
-        _currentState = 5;
-        _sensor('P4').active = true;
-      });
-      _logAudit('EST5 · P4 detectado · Pieza en taladradora · Taladrando...',
-          LogType.info);
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 5; _sensor('P4').active = true; });
+      _logAudit('EST5 · P4 detectado · Taladrando...', LogType.info);
       _toggleActuator('M3', false);
       _toggleActuator('M6', false);
       await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M5', true);
-      _logAudit('M5 ON · Motor taladradora activo · Taladrando pieza',
-          LogType.success);
+      _logAudit('M5 ON · Taladrando pieza', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M5', false);
       _logAudit('M5 OFF · Taladrado completado', LogType.audit);
       await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M6', true);
       await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M6', false);
-      setState(() {
-        _sensor('P4').active = false;
-        _sensor('R2').active = false;
-      });
+      setState(() { _sensor('P4').active = false; _sensor('R2').active = false; });
       _toggleActuator('M7', true);
       _logAudit('M7 ON · Empujador 2 activado → salida', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
-
-      // EST6: R2 → M7 apaga, M8 banda salida
-      setState(() {
-        _currentState = 6;
-        _sensor('R2').active = true;
-      });
-      _logAudit('EST6 · R2 en reposo · M7 apaga · M8 banda salida activa',
-          LogType.info);
+      
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 6; _sensor('R2').active = true; });
+      _logAudit('EST6 · R2 en reposo · M8 banda salida activa', LogType.info);
       _toggleActuator('M7', false);
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M8', true);
       _logAudit('M8 ON · Banda de producto terminado activa', LogType.success);
       await Future.delayed(const Duration(seconds: 2));
 
-      // EST7: P5 → M8 apaga, ciclo completo
-      setState(() {
-        _currentState = 7;
-        _sensor('P5').active = true;
-      });
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 7; _sensor('P5').active = true; });
       _logAudit('EST7 · P5 detectado · Pieza en área de salida', LogType.info);
       await Future.delayed(const Duration(seconds: 1));
+
+      if (!_isCycleRunning || !mounted) return;
       _toggleActuator('M8', false);
-      setState(() {
-        _sensor('P5').active = false;
-        _piezas++;
-      });
-      _logAudit(
-          '✔ CICLO EXITOSO · Pieza maquinada y contabilizada', LogType.success);
+      setState(() { _sensor('P5').active = false; _piezas++; });
+      _logAudit('✔ CICLO EXITOSO · Pieza #${_piezas} maquinada', LogType.success);
+
     } catch (e) {
       _logAudit('ERROR en la secuencia automática: $e', LogType.error);
     }
-
-    setState(() {
-      _isCycleRunning = false;
-      _currentState = 0;
-      _updatePermissions();
-    });
   }
 
   @override
@@ -348,24 +395,19 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
-        // 1. Movemos el ScrollView para que envuelva a TODO
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 2. El Header ahora es el primer hijo del scroll
               _buildHeader(),
               const SizedBox(height: 16),
-
-              // 3. Ya NO usamos Expanded aquí
               _buildTopBar(),
               const SizedBox(height: 10),
               _buildDigitalTwin(),
               const SizedBox(height: 10),
               _buildRow2(),
               const SizedBox(height: 10),
-              //_buildStateProgress(),
             ],
           ),
         ),
@@ -375,21 +417,18 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
 
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: kMachine, width: 2))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('CENTRO DE MAQUINADOS',
+            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('CENTRO DE MAQUINADOS',
                   style: TextStyle(
                       color: kMachine,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.4)),
-              /*  Text('Art. No. TMINL24-A  ·  Indexed Line 24V',
-                  style: TextStyle(color: kText.withOpacity(0.5), fontSize: 10,
-                      letterSpacing: 1)), */
             ]),
             Text(_clock,
                 style: const TextStyle(
@@ -409,28 +448,21 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            /*    _labeledSelect('Rol:', _role, {
-              'Ingeniero': 'Ingeniero (Control Total)',
-              'Operador': 'Operador',
-            }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
               'auto': 'Automático',
             }, (v) {
-              setState(() => _mode = v!);
+              if(mounted) setState(() => _mode = v!);
               _updatePermissions();
             }),
-            /*  _labeledSelect('Conexión:', 'sim', {
-              'sim': 'Simulación Local',
-              'lan': 'Red Local (KC868)',
-            }, (_) {}), */
+            _buildPiezasInput(),
             ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
-              icon: Icon(_isCycleRunning ? Icons.stop : Icons.play_arrow,
+              icon: Icon(_isCycleRunning ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
                   size: 16),
               label: Text(_isCycleRunning
-                  ? 'Ejecutando...'
-                  : 'Iniciar Ciclo Automático'),
+                  ? 'EJECUTANDO...'
+                  : 'INICIAR CICLO'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kGreen,
                 foregroundColor: kBg,
@@ -440,20 +472,79 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
-            /*  ElevatedButton.icon(
-              onPressed: () => _logAudit('Auditoría exportada.', LogType.audit),
-              icon: const Icon(Icons.download, size: 16),
-              label: const Text('Exportar Auditoría CSV'),
+             ElevatedButton.icon(
+              onPressed: _triggerEmergency,
+              icon: const Icon(Icons.warning_amber_rounded, size: 16),
+              label: const Text('PARO EMERGENCIA'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kAudit, foregroundColor: kBg,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                backgroundColor: kRed,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
-            ), */
+            ),
+            ElevatedButton.icon(
+              onPressed: _isCycleRunning ? null : _resetToHome,
+              icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
+              label: const Text('RESTABLECER'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kCyan,
+                foregroundColor: kBg,
+                disabledBackgroundColor: const Color(0xFF333333),
+                disabledForegroundColor: const Color(0xFF666666),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              ),
+            ),
             _kpiBox('Piezas Terminadas', '$_piezas', kGreen),
-            //_kpiBox('Eficiencia (OEE)', '100%', kMachine),
           ],
         ),
       );
+      
+   Widget _buildPiezasInput() => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text("Piezas:", style: TextStyle(color: kText, fontSize: 12)),
+      const SizedBox(width: 8),
+      SizedBox(
+        width: 60,
+        height: 38,
+        child: TextField(
+          controller: _piezasController,
+          enabled: _mode == 'auto',
+          keyboardType: TextInputType.number,
+          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _mode == 'auto' ? kCyan : Colors.grey,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: kBg,
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: kCyan, width: 2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: kBorder),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
           ValueChanged<String?> fn) =>
@@ -498,7 +589,6 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         ]),
       );
 
-  // ── Gemelo Digital (línea de producción horizontal) ────
   Widget _buildDigitalTwin() {
     return _panel(
       title: 'Gemelo Digital 2D  ·  Línea Indexada',
@@ -510,50 +600,31 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           width: 900,
           height: 170,
           child: Stack(children: [
-            // ── Banda entrada ─────────────────────────────
             _dtBand('M1\nEntrada', _act('M1').on, left: 10, top: 100, w: 100),
             _dtSensorDot('P1', _sensor('P1').active, left: 50, top: 80),
-
-            // ── Empujador 1 ───────────────────────────────
             _dtPusher('M2\nEmpujador 1', _act('M2').on, left: 120, top: 50),
             _dtSensorDot('R1', _sensor('R1').active, left: 155, top: 30),
-
-            // ── Banda 2 ───────────────────────────────────
             _dtBand('M3\nBanda 2', _act('M3').on, left: 210, top: 100, w: 110),
             _dtSensorDot('P2', _sensor('P2').active, left: 255, top: 80),
-
-            // ── Fresadora ─────────────────────────────────
             _dtMachine('M4\nFresadora', _act('M4').on, left: 330, top: 30),
             _dtSensorDot('P3', _sensor('P3').active, left: 372, top: 80),
-
-            // ── Banda 3 ───────────────────────────────────
             _dtBand('M6\nBanda 3', _act('M6').on, left: 440, top: 100, w: 100),
-
-            // ── Taladradora ───────────────────────────────
             _dtMachine('M5\nTaladradora', _act('M5').on, left: 550, top: 30),
             _dtSensorDot('P4', _sensor('P4').active, left: 592, top: 80),
-
-            // ── Empujador 2 ───────────────────────────────
             _dtPusher('M7\nEmpujador 2', _act('M7').on, left: 660, top: 50),
             _dtSensorDot('R2', _sensor('R2').active, left: 695, top: 30),
-
-            // ── Banda salida ──────────────────────────────
             _dtBand('M8\nSalida', _act('M8').on, left: 760, top: 100, w: 100),
             _dtSensorDot('P5', _sensor('P5').active, left: 805, top: 80),
-
-            // ── Línea de flujo base ───────────────────────
             Positioned(
               left: 10,
               top: 130,
               right: 10,
               child: Container(height: 2, color: kBorder),
             ),
-
-            // ── Flecha dirección ──────────────────────────
-            Positioned(
+            const Positioned(
               left: 420,
               top: 126,
-              child: const Icon(Icons.arrow_forward, color: kMachine, size: 18),
+              child: Icon(Icons.arrow_forward, color: kMachine, size: 18),
             ),
           ]),
         ),
@@ -673,7 +744,6 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         ),
       );
 
-  // ── Row 2: Sensores + Actuadores + Audit ──────────────
   Widget _buildRow2() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -811,41 +881,6 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           ),
         ),
       );
-
-  // ── Progreso de estados (7 estados) ───────────────────
-/*   Widget _buildStateProgress() => _panel(
-        title: 'Progreso del Ciclo  ·  ${kEstados[_currentState]}',
-        titleColor: _currentState > 0 ? kMachine : kText,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(
-            children: List.generate(7, (i) {
-              final state = i + 1;
-              final done   = _currentState > state;
-              final active = _currentState == state;
-              return Expanded(
-                child: Column(children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: done ? kGreen : active ? kMachine : kBorder,
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: active
-                          ? [BoxShadow(color: kMachine.withOpacity(0.6), blurRadius: 6)]
-                          : null),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('E$state',
-                      style: TextStyle(
-                          color: done ? kGreen : active ? kMachine : const Color(0xFF546E7A),
-                          fontSize: 9, fontWeight: FontWeight.bold)),
-                ]),
-              );
-            }),
-          ),
-        ]),
-      ); */
 
   Widget _panel({
     required String title,

@@ -1,4 +1,4 @@
-// TODO Implement this library.
+
 // ============================================================
 // CENTRO DE PRENSADO SCADA 4.0 -- Flutter
 // Art. No. TMPUM24-A -- Punching Machine 24V
@@ -9,6 +9,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // ── Paleta ────────────────────────────────────────────────────────────────
 const Color _kBg = Color(0xFF081014);
@@ -23,11 +24,6 @@ const Color _kDark = Color(0xFF0C1820);
 const Color _kOrange = Color(0xFFFFAA00); // color característico de prensado
 
 // ── Estados del ciclo (fiel al proceso real TMPUM24-A) ────────────────────
-// EST1: P1 detecta pieza + S1 (prensa en home) → Banda forward (RLY03)
-// EST2: P2 detecta pieza en prensa + S1 home   → Para banda → Baja prensa (RLY02)
-// EST3: S2 detecta prensa abajo/trabajo         → Sube prensa (RLY01)
-// EST4: S1 detecta prensa de vuelta en home     → Para subida → Banda expulsa (RLY03)
-// FIN : P2 queda libre                          → Ciclo completo
 const List<String> _kEstados = [
   'Sin iniciar',
   'EST1 · Pieza en P1 (entrada) · Banda avanzando',
@@ -86,19 +82,19 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   int _currentState = 0;
   int _piezas = 0;
 
-  // ── Sensores (Engine Inputs — TMPUM24-A página 4) ─────────────────────
+  final TextEditingController _piezasController = TextEditingController(text: '1');
+
   final List<_PSensorModel> _sensors = [
     _PSensorModel('P1', 'P1', 'Work Piece Present at Entrance Area',
         active: false),
     _PSensorModel('P2', 'P2', 'Work Piece Present at Punching Machine',
         active: false),
     _PSensorModel('S1', 'S1', 'Punching Machine at Home Position',
-        active: true), // arranca en home
+        active: true), 
     _PSensorModel('S2', 'S2', 'Punching Machine at Work Position',
         active: false),
   ];
 
-  // ── Actuadores (Engine Outputs — TMPUM24-A página 5) ─────────────────
   final List<_PActuatorModel> _actuators = [
     _PActuatorModel('RLY01', 'RLY01', 'Punching Machine → Home Position (M1↑)'),
     _PActuatorModel('RLY02', 'RLY02', 'Punching Machine → Work Position (M1↓)'),
@@ -114,13 +110,12 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
 
   bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
 
-  // ── Init / Dispose ────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
     _updateClock();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(_updateClock);
+      if (mounted) setState(_updateClock);
     });
     _log('Sistema iniciado · Centro de Prensado TMPUM24-A', _PLogType.info);
     _log('Modo: $_mode · Rol: $_role', _PLogType.audit);
@@ -130,6 +125,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   void dispose() {
     _clockTimer.cancel();
     _logScroll.dispose();
+    _piezasController.dispose();
     super.dispose();
   }
 
@@ -139,21 +135,21 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
   }
 
-  // ── Logging ───────────────────────────────────────────────────────────
   void _log(String msg, _PLogType type) {
     final n = DateTime.now();
     final t =
         '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-    setState(() => _logs.add(_PLogEntry(t, _role, msg, type)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_logScroll.hasClients) {
-        _logScroll.animateTo(_logScroll.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
-    });
+    if (mounted) {
+      setState(() => _logs.add(_PLogEntry(t, _role, msg, type)));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_logScroll.hasClients) {
+          _logScroll.animateTo(_logScroll.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        }
+      });
+    }
   }
 
-  // ── Permisos ──────────────────────────────────────────────────────────
   void _updatePermissions() {
     for (final a in _actuators) {
       a.disabled = (_role == 'Operador' || _mode == 'auto' || _isCycleRunning);
@@ -161,7 +157,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
     _log('Configuración cambiada a Modo: $_mode', _PLogType.audit);
   }
 
-  // ── Toggle sensor (modo manual) ───────────────────────────────────────
   void _toggleSensor(String id) {
     if (_mode != 'manual') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -171,179 +166,197 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
       return;
     }
     final s = _sensor(id);
-    setState(() => s.active = !s.active);
+    if (mounted) setState(() => s.active = !s.active);
     _log('Simulación Manual: Sensor $id → ${s.active ? 'ACTIVO' : 'LIBRE'}',
         _PLogType.audit);
   }
 
-  // ── Toggle actuador (modo manual) ─────────────────────────────────────
   void _toggleActuator(String id, bool val) {
-    setState(() => _act(id).on = val);
-    if (!_isCycleRunning) {
-      // Bloqueo H-bridge: RLY01↑ apaga RLY02↓ y viceversa
-      if (val && id == 'RLY01') setState(() => _act('RLY02').on = false);
-      if (val && id == 'RLY02') setState(() => _act('RLY01').on = false);
-      if (val && id == 'RLY03') setState(() => _act('RLY04').on = false);
-      if (val && id == 'RLY04') setState(() => _act('RLY03').on = false);
-      _log('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _PLogType.audit);
+    if (mounted) {
+      setState(() {
+        _act(id).on = val;
+        if (!_isCycleRunning) {
+          if (val && id == 'RLY01') _act('RLY02').on = false;
+          if (val && id == 'RLY02') _act('RLY01').on = false;
+          if (val && id == 'RLY03') _act('RLY04').on = false;
+          if (val && id == 'RLY04') _act('RLY03').on = false;
+          _log('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _PLogType.audit);
+        }
+      });
     }
   }
 
-  // ── CICLO AUTOMÁTICO (fiel al proceso real TMPUM24-A) ─────────────────
-  // Diagrama de relés pág. 6: RLY01+RLY02 → M1 (H-bridge punzón)
-  //                           RLY03+RLY04 → M2 (H-bridge banda)
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
 
-    // Verificar condición de inicio: prensa en home (S1) y pieza en entrada (P1)
+    final int numPiezas = int.tryParse(_piezasController.text) ?? 0;
+    if (numPiezas <= 0) {
+      _log('ERROR: El número de piezas debe ser mayor a 0.', _PLogType.error);
+      return;
+    }
+
     if (!_sensor('S1').active) {
       _log('FALLA ARRANQUE: Punzón no está en posición HOME (S1 inactivo).',
           _PLogType.error);
       return;
     }
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = true;
+        _updatePermissions();
+      });
+    }
 
-    setState(() {
-      _isCycleRunning = true;
-      _currentState = 1;
-      _updatePermissions();
-    });
+    _log('══ INICIANDO CICLO AUTOMÁTICO PARA $numPiezas PIEZAS ══', _PLogType.info);
 
-    _log('══ INICIANDO CICLO AUTOMÁTICO ══', _PLogType.info);
+    for (int i = 0; i < numPiezas; i++) {
+      if (!_isCycleRunning) break;
+      _log('--- Procesando pieza ${i + 1} de $numPiezas ---', _PLogType.info);
+      await _runSingleCycle();
+      if (!_isCycleRunning) {
+        _log('Ciclo interrumpido por PARO DE EMERGENCIA.', _PLogType.error);
+        break;
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        _updatePermissions();
+      });
+    }
+    _log('══ CICLO AUTOMÁTICO FINALIZADO ══', _PLogType.info);
+  }
 
+  Future<void> _runSingleCycle() async {
     try {
-      // ─── EST1: Simula detección de pieza en entrada (P1) ─────────────
-      setState(() => _sensor('P1').active = true);
-      _log('EST1 · P1: Pieza detectada en área de entrada.', _PLogType.info);
-
-      // Activa banda hacia adelante (RLY03 → M2 Forward)
+      if (!_isCycleRunning || !mounted) return;
+      setState(() {
+        _currentState = 1;
+        _sensor('P1').active = true;
+      });
+      _log('EST1 · P1: Pieza detectada.', _PLogType.info);
       setState(() => _act('RLY03').on = true);
-      _log('EST1 · RLY03 ON → Banda transportadora avanza (M2 Forward).',
-          _PLogType.audit);
+      _log('EST1 · RLY03 ON → Banda avanza.', _PLogType.audit);
       await Future.delayed(const Duration(milliseconds: 1800));
 
-      // ─── EST2: Pieza llega a la prensa (P2 activa) ───────────────────
+      if (!_isCycleRunning || !mounted) return;
       setState(() {
         _currentState = 2;
-        _act('RLY03').on = false; // para banda
-        _sensor('P1').active = false; // ya salió de entrada
-        _sensor('P2').active = true; // llegó a prensa
+        _act('RLY03').on = false;
+        _sensor('P1').active = false;
+        _sensor('P2').active = true;
       });
-      _log('EST2 · P2: Pieza presente en prensa. Deteniendo banda.',
-          _PLogType.info);
-      _log('EST2 · RLY03 OFF → Banda detenida.', _PLogType.audit);
+      _log('EST2 · P2: Pieza en prensa.', _PLogType.info);
       await Future.delayed(const Duration(milliseconds: 400));
 
-      // Baja el punzón (RLY02 → M1 to Work Position)
+      if (!_isCycleRunning || !mounted) return;
       setState(() => _act('RLY02').on = true);
-      _log('EST2 · RLY02 ON → Punzón bajando a posición de trabajo (M1↓).',
-          _PLogType.audit);
+      _log('EST2 · RLY02 ON → Punzón bajando.', _PLogType.audit);
       await Future.delayed(const Duration(milliseconds: 200));
-
-      // S1 se desactiva al salir de home
       setState(() => _sensor('S1').active = false);
       await Future.delayed(const Duration(milliseconds: 1400));
 
-      // ─── EST3: Punzón llega al tope inferior (S2 activo) ─────────────
+      if (!_isCycleRunning || !mounted) return;
       setState(() {
         _currentState = 3;
-        _sensor('S2').active = true; // punzón en posición de trabajo
-        _act('RLY02').on = false; // para el motor de bajada
+        _sensor('S2').active = true;
+        _act('RLY02').on = false;
       });
-      _log('EST3 · S2: Punzón en posición de TRABAJO. Deteniendo bajada.',
-          _PLogType.info);
-      _log('EST3 · RLY02 OFF → Motor punzón detenido.', _PLogType.audit);
+      _log('EST3 · S2: Punzón en trabajo.', _PLogType.info);
       await Future.delayed(const Duration(milliseconds: 600));
-
-      // Sube el punzón (RLY01 → M1 to Home Position)
       setState(() => _act('RLY01').on = true);
-      _log('EST3 · RLY01 ON → Punzón subiendo a posición HOME (M1↑).',
-          _PLogType.audit);
+      _log('EST3 · RLY01 ON → Punzón subiendo.', _PLogType.audit);
       await Future.delayed(const Duration(milliseconds: 200));
-
-      // S2 se desactiva al salir del tope inferior
       setState(() => _sensor('S2').active = false);
       await Future.delayed(const Duration(milliseconds: 1400));
 
-      // ─── EST4: Punzón de vuelta en home (S1 activo) ──────────────────
+      if (!_isCycleRunning || !mounted) return;
       setState(() {
         _currentState = 4;
-        _sensor('S1').active = true; // punzón de vuelta en home
-        _act('RLY01').on = false; // para el motor de subida
+        _sensor('S1').active = true;
+        _act('RLY01').on = false;
       });
-      _log('EST4 · S1: Punzón en posición HOME. Deteniendo subida.',
-          _PLogType.info);
-      _log('EST4 · RLY01 OFF → Motor punzón detenido.', _PLogType.audit);
+      _log('EST4 · S1: Punzón en HOME.', _PLogType.info);
       await Future.delayed(const Duration(milliseconds: 400));
-
-      // Activa banda para expulsar pieza (RLY03 → M2 Forward)
       setState(() => _act('RLY03').on = true);
-      _log('EST4 · RLY03 ON → Banda expulsando pieza terminada (M2 Forward).',
-          _PLogType.audit);
+      _log('EST4 · RLY03 ON → Expulsando pieza.', _PLogType.audit);
       await Future.delayed(const Duration(milliseconds: 1800));
 
-      // Pieza sale de la zona de prensado
+      if (!_isCycleRunning || !mounted) return;
       setState(() {
         _act('RLY03').on = false;
-        _sensor('P2').active = false; // pieza expulsada
+        _sensor('P2').active = false;
         _piezas++;
       });
-      _log('EST4 · RLY03 OFF → Banda detenida. Pieza expulsada.',
-          _PLogType.audit);
-
-      _log('══ CICLO EXITOSO · Pieza #$_piezas completada ══',
-          _PLogType.success);
+      _log('══ CICLO EXITOSO · Pieza #$_piezas completada ══', _PLogType.success);
     } catch (e) {
-      _log('ERROR en secuencia automática: $e', _PLogType.error);
+      _log('ERROR en secuencia: $e', _PLogType.error);
     }
-
-    setState(() {
-      _isCycleRunning = false;
-      _currentState = 0;
-      _updatePermissions();
-    });
   }
 
-  // ── Paro de emergencia ────────────────────────────────────────────────
   void _triggerEmergency() {
-    for (final a in _actuators) {
-      setState(() => a.on = false);
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        for (final a in _actuators) {
+          a.on = false;
+        }
+      });
     }
-    _isCycleRunning = false;
-    _currentState = 0;
-    _log('¡PARO DE EMERGENCIA ACTIVADO! Todos los actuadores apagados.',
-        _PLogType.error);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: _kPanel,
-        title: const Text('⚠ PARO DE EMERGENCIA',
-            style: TextStyle(color: _kRed, fontSize: 15)),
-        content: const Text(
-            'Todos los relés han sido desactivados.\nRevise la máquina antes de reiniciar.',
-            style: TextStyle(color: _kText)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: _kCyan)))
-        ],
-      ),
-    );
+    _log('¡PARO DE EMERGENCIA ACTIVADO! Todos los actuadores apagados.', _PLogType.error);
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: _kPanel,
+          title: const Text('⚠ PARO DE EMERGENCIA',
+              style: TextStyle(color: _kRed, fontSize: 15)),
+          content: const Text(
+              'Todos los relés han sido desactivados.\nRevise la máquina antes de reiniciar.',
+              style: TextStyle(color: _kText)),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: _kCyan)))
+          ],
+        ),
+      );
+    }
+  }
+  void _resetToHome() {
+    _log('Restableciendo sistema a estado inicial...', _PLogType.audit);
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        // Apagar todos los actuadores
+        for (final a in _actuators) {
+          a.on = false;
+        }
+        // Restablecer sensores a su estado inicial
+        _sensor('P1').active = false;
+        _sensor('P2').active = false;
+        _sensor('S1').active = true; // Punzón en home
+        _sensor('S2').active = false;
+      });
+    }
+    _log('Sistema restablecido a la posición HOME.', _PLogType.success);
   }
 
-  // ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    // CÓDIGO CORREGIDO
     return Scaffold(
       backgroundColor: _kBg,
       body: SafeArea(
         child: SingleChildScrollView(
-          // El scroll ahora envuelve a TODO el Column
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(), // <--- AHORA ESTÁ ADENTRO
+              _buildHeader(),
               const SizedBox(height: 16),
               _buildTopBar(),
               const SizedBox(height: 10),
@@ -358,7 +371,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
         decoration: const BoxDecoration(
@@ -375,8 +387,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4)),
-                //Text('Art. No. TMPUM24-A · Punching Machine 24V',
-                //style: TextStyle(color: _kText, fontSize: 11)),
               ],
             ),
             Text(_clock,
@@ -386,7 +396,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ),
       );
 
-  // ── Top bar ───────────────────────────────────────────────────────────
   Widget _buildTopBar() => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -399,21 +408,14 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            /*  _labeledSelect('Rol:', _role, {
-              'Ingeniero': 'Ingeniero (Control Total)',
-              'Operador':  'Operador (Auto/Lectura)',
-            }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
               'auto': 'Automático',
             }, (v) {
-              setState(() => _mode = v!);
+              if (mounted) setState(() => _mode = v!);
               _updatePermissions();
             }),
-            /*  _labeledSelect('Conexión:', _conn, {
-              'sim': 'Simulación Local',
-              'ws':  'Hardware Real (WebSocket)',
-            }, (v) { setState(() => _conn = v!); }), */
+            _buildPiezasInput(),
             ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
               icon: Icon(
@@ -434,13 +436,25 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: _isCycleRunning ? null : _triggerEmergency,
+              onPressed: _triggerEmergency,
               icon: const Icon(Icons.warning_amber_rounded, size: 18),
               label: const Text('PARO EMERGENCIA',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kRed,
                 foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: _isCycleRunning ? null : _resetToHome, 
+              icon: const Icon(Icons.replay_circle_filled_rounded, size: 18),
+              label: const Text('RESTABLECER',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kCyan,
+                foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
                 padding:
@@ -451,6 +465,53 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           ],
         ),
       );
+
+  Widget _buildPiezasInput() => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text("Piezas:", style: TextStyle(color: _kText, fontSize: 13)),
+      const SizedBox(width: 8),
+      SizedBox(
+        width: 60,
+        height: 38,
+        child: TextField(
+          controller: _piezasController,
+          enabled: _mode == 'auto',
+          keyboardType: TextInputType.number,
+          inputFormatters: <TextInputFormatter>[
+            FilteringTextInputFormatter.digitsOnly
+          ],
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _mode == 'auto' ? _kOrange : Colors.grey,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: _kBg,
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: _mode == 'auto' ? _kOrange : _kBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: _mode == 'auto' ? _kOrange : _kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _kOrange, width: 2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: _kBorder),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
           ValueChanged<String?> onChanged) =>
@@ -498,58 +559,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ]),
       );
 
-  // ── Barra de progreso de estados ──────────────────────────────────────
-/*   Widget _buildStateProgress() => _panel(
-        title: _kEstados[_currentState],
-        titleColor: _currentState > 0 ? _kOrange : _kText,
-        child: Row(
-          children: List.generate(4, (i) {
-            final state  = i + 1;
-            final done   = _currentState > state;
-            final active = _currentState == state;
-            final labels = ['EST1\nBanda', 'EST2\nBaja', 'EST3\nSube', 'EST4\nExpulsa'];
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Column(children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: done
-                          ? _kGreen
-                          : active
-                              ? _kOrange
-                              : _kBorder,
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: active
-                          ? [BoxShadow(
-                              color: _kOrange.withOpacity(0.6), blurRadius: 8)]
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(labels[i],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: done
-                            ? _kGreen
-                            : active
-                                ? _kOrange
-                                : const Color(0xFF546E7A),
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ]),
-              ),
-            );
-          }),
-        ),
-      );
-
- */
-
-  // ── Row 1: Gemelo Digital + Sensores ─────────────────────────────────
   Widget _buildRow1() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -559,9 +568,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ],
       );
 
-  // ── GEMELO DIGITAL ────────────────────────────────────────────────────
-  // Basado en System Layout TMPUM24-A página 7:
-  // M2 (banda) en la base, M1 (punzón) arriba vertical
   Widget _buildDigitalTwin() => Container(
         height: 320,
         decoration: BoxDecoration(
@@ -580,7 +586,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
                     fontSize: 12)),
           ),
 
-          // ── Banda transportadora M2 (base) ────────────────────────
           Positioned(
             bottom: 40,
             left: 30,
@@ -593,7 +598,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             ),
           ),
 
-          // ── Indicador dirección de banda ──────────────────────────
           if (_act('RLY03').on || _act('RLY04').on)
             Positioned(
               bottom: 48,
@@ -608,21 +612,18 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               ),
             ),
 
-          // ── Sensor P1 (entrada de banda) ──────────────────────────
           Positioned(
             bottom: 82,
             left: 38,
             child: _sensorDot('P1', _sensor('P1').active),
           ),
 
-          // ── Sensor P2 (pieza en zona de prensado) ─────────────────
           Positioned(
             bottom: 82,
             left: 158,
             child: _sensorDot('P2', _sensor('P2').active),
           ),
 
-          // ── Cuerpo de la prensa (columna vertical) ────────────────
           Positioned(
             bottom: 78,
             left: 150,
@@ -642,15 +643,14 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             ),
           ),
 
-          // ── Punzón M1 (animado: baja/sube) ───────────────────────
           AnimatedPositioned(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
             bottom: _act('RLY02').on
-                ? 82 // bajando → en trabajo
+                ? 82
                 : _act('RLY01').on || _sensor('S1').active
-                    ? 200 // en home
-                    : 145, // posición media
+                    ? 200
+                    : 145,
             left: 135,
             child: _dtRect(
               'M1\nPunzón',
@@ -661,7 +661,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             ),
           ),
 
-          // ── Sensor S1 (home) ──────────────────────────────────────
           Positioned(
             top: 60,
             left: 220,
@@ -672,7 +671,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             ]),
           ),
 
-          // ── Sensor S2 (trabajo/abajo) ─────────────────────────────
           Positioned(
             bottom: 92,
             left: 220,
@@ -684,7 +682,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             ]),
           ),
 
-          // ── Indicadores de relés (esquina inferior derecha) ───────
           Positioned(
             top: 14,
             left: 14,
@@ -774,7 +771,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ]),
       );
 
-  // ── Panel de Sensores ─────────────────────────────────────────────────
   Widget _buildSensorsPanel() => _panel(
         title: 'Sensores / Entradas (Engine Inputs)',
         child: Column(
@@ -832,32 +828,57 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ),
       );
 
-  // ── Row 2: Actuadores + Info del proceso ──────────────────────────────
   Widget _buildRow2() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(child: _buildActuatorsPanel()),
           const SizedBox(width: 12),
-          //Expanded(child: _buildProcessInfo()),
+          Expanded(flex: 2, child: _buildAuditPanel()),
         ],
       );
 
-  // ── Panel de Actuadores ───────────────────────────────────────────────
   Widget _buildActuatorsPanel() => _panel(
         title: 'Actuadores / Relés (Engine Outputs)',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // M1 control (H-bridge: RLY01 y RLY02 son mutuamente exclusivos)
             _groupLabel('Motor M1 — Punzón (H-Bridge)'),
             _actuatorRow(_act('RLY01')),
             _actuatorRow(_act('RLY02')),
             const SizedBox(height: 8),
-            // M2 control (H-bridge: RLY03 y RLY04 son mutuamente exclusivos)
             _groupLabel('Motor M2 — Banda Transportadora (H-Bridge)'),
             _actuatorRow(_act('RLY03')),
             _actuatorRow(_act('RLY04')),
           ],
+        ),
+      );
+      
+  Widget _buildAuditPanel() => _panel(
+        title: 'Auditoría (Audit Trail) y Alertas',
+        child: Container(
+          height: 180,
+          decoration: BoxDecoration(
+              color: _kBg,
+              border: Border.all(color: _kBorder),
+              borderRadius: BorderRadius.circular(4)),
+          padding: const EdgeInsets.all(10),
+          child: ListView.builder(
+            controller: _logScroll,
+            itemCount: _logs.length,
+            itemBuilder: (_, i) {
+              final l = _logs[i];
+              return Text(
+                '[${l.time}] [${l.user}] - ${l.message}',
+                style: TextStyle(
+                    color: l.color,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    fontWeight: l.type == _PLogType.audit
+                        ? FontWeight.bold
+                        : FontWeight.normal),
+              );
+            },
+          ),
         ),
       );
 
@@ -908,117 +929,6 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ]),
       );
 
-  // ── Info del proceso (referencia al manual) ───────────────────────────
-  /*  Widget _buildProcessInfo() => _panel(
-        title: 'Referencia del Proceso — TMPUM24-A',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _infoRow('📥 P1', 'Work Piece at Entrance Area', _sensor('P1').active),
-            _infoRow('🎯 P2', 'Work Piece at Punching Machine', _sensor('P2').active),
-            _infoRow('⬆ S1', 'Punching Machine at Home Position', _sensor('S1').active),
-            _infoRow('⬇ S2', 'Punching Machine at Work Position', _sensor('S2').active),
-            const Divider(color: _kBorder, height: 16),
-            _infoRow('🔵 RLY01', 'M1 → Home (sube punzón)', _act('RLY01').on),
-            _infoRow('🟠 RLY02', 'M1 → Work (baja punzón)', _act('RLY02').on),
-            _infoRow('🟢 RLY03', 'M2 → Forward (banda)', _act('RLY03').on),
-            _infoRow('🟡 RLY04', 'M2 → Backward (retorno)', _act('RLY04').on),
-            const Divider(color: _kBorder, height: 16),
-            const Text('Módulo de relés:',
-                style: TextStyle(
-                    color: _kAudit, fontSize: 10, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text(
-              'RLY01+RLY02 → H-Bridge M1 (punzón)\n'
-              'RLY03+RLY04 → H-Bridge M2 (banda)',
-              style: TextStyle(color: Color(0xFF546E7A), fontSize: 10),
-            ),
-          ],
-        ),
-      );
-
-
- */
-
-/* 
-
-  Widget _infoRow(String label, String desc, bool active) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: active ? _kGreen : const Color(0xFF334455),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text('$label — ',
-              style: TextStyle(
-                  color: active ? _kOrange : _kText,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold)),
-          Expanded(
-            child: Text(desc,
-                style: const TextStyle(
-                    color: Color(0xFF546E7A), fontSize: 10)),
-          ),
-        ]),
-      );
-
-
-
-
-
-
-
-
-  // ── Panel de Auditoría ────────────────────────────────────────────────
-  Widget _buildAuditPanel() => _panel(
-        title: 'Auditoría (Audit Trail) y Alertas',
-        child: Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: _kBg,
-            border: Border.all(color: _kBorder),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          padding: const EdgeInsets.all(8),
-          child: ListView.builder(
-            controller: _logScroll,
-            itemCount: _logs.length,
-            itemBuilder: (_, i) {
-              final l = _logs[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                        fontSize: 11, fontFamily: 'monospace'),
-                    children: [
-                      TextSpan(
-                          text: '[${l.time}] ',
-                          style: const TextStyle(
-                              color: Color(0xFF546E7A))),
-                      TextSpan(
-                          text: '[${l.user}] - ',
-                          style: const TextStyle(color: _kCyan)),
-                      TextSpan(
-                          text: l.message,
-                          style: TextStyle(color: l.color)),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
- */
-
-  // ── Panel wrapper ─────────────────────────────────────────────────────
   Widget _panel({
     required String title,
     required Widget child,

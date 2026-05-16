@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // ── Paleta propia (nombres distintos a main.dart para evitar conflictos) ──
 const Color kBg = Color(0xFF081014);
@@ -19,7 +20,7 @@ const Color kAudit = Color(0xFFFFAA00);
 const Color kDark = Color(0xFF0C1820);
 
 // ── Modelos internos (privados a este archivo) ────────────────────────────
-enum _NLogType { info, audit, error }
+enum _NLogType { info, audit, error, success }
 
 class _NLogEntry {
   final String time, role, message;
@@ -29,7 +30,9 @@ class _NLogEntry {
       ? kRedN
       : type == _NLogType.audit
           ? kAudit
-          : kText;
+          : type == _NLogType.success 
+            ? kGreenN
+            : kText;
 }
 
 class _SensorModel {
@@ -58,11 +61,11 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   late Timer _clockTimer;
   String _role = 'Ingeniero';
   String _mode = 'manual';
-  String _conn = 'sim';
   bool _isCycleRunning = false;
   double _pressure = 1.0;
   int _piezas = 0;
 
+  final TextEditingController _piezasController = TextEditingController(text: '1');
   final List<double> _chartData = List.filled(40, 1.0);
 
   final List<_SensorModel> _sensors = [
@@ -94,12 +97,15 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
     super.initState();
     _updateClock();
     _clockTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      setState(() {
-        _updateClock();
-        _simulatePressure();
-      });
+      if(mounted) {
+        setState(() {
+          _updateClock();
+          _simulatePressure();
+        });
+      }
     });
     _logAudit('Configuración cambiada a Modo: $_mode', _NLogType.audit);
+    _resetToHome(log: false);
   }
 
   void _updateClock() {
@@ -109,21 +115,23 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   }
 
   void _simulatePressure() {
-    if (_act('M1').on) {
-      _pressure += 0.2;
-    } else {
-      _pressure -= 0.05;
-    }
+    if (_act('M1').on) _pressure += 0.2;
+    else _pressure -= 0.05;
     _pressure += (Random().nextDouble() - 0.5) * 0.1;
     _pressure = _pressure.clamp(1.0, 5.0);
-    _chartData.removeAt(0);
-    _chartData.add(_pressure);
+    if(mounted) {
+      setState(() {
+        _chartData.removeAt(0);
+        _chartData.add(_pressure);
+      });
+    }
   }
 
   @override
   void dispose() {
     _clockTimer.cancel();
     _logScroll.dispose();
+    _piezasController.dispose();
     super.dispose();
   }
 
@@ -131,13 +139,15 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
     final n = DateTime.now();
     final time =
         '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-    setState(() => _logs.add(_NLogEntry(time, _role, message, type)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_logScroll.hasClients) {
-        _logScroll.animateTo(_logScroll.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
-    });
+    if(mounted) {
+      setState(() => _logs.add(_NLogEntry(time, _role, message, type)));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_logScroll.hasClients) {
+          _logScroll.animateTo(_logScroll.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        }
+      });
+    }
   }
 
   void _updatePermissions() {
@@ -156,94 +166,101 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
       return;
     }
     final s = _sensor(id);
-    setState(() => s.active = !s.active);
-    _logAudit(
-        'Simulación Manual: Sensor $id forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}',
-        _NLogType.audit);
+    if(mounted) setState(() => s.active = !s.active);
+    _logAudit('Simulación Manual: Sensor $id forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}', _NLogType.audit);
   }
 
   void _toggleActuator(String id, bool val) {
-    setState(() => _act(id).on = val);
+    if(mounted) setState(() => _act(id).on = val);
     if (!_isCycleRunning) {
-      _logAudit(
-          'Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
+      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
     }
+  }
+  
+  void _resetToHome({bool log = true}){
+    if(log) _logAudit('Restableciendo sistema a estado inicial...', _NLogType.audit);
+     if(mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        for (final a in _actuators) { a.on = false; }
+        for (final s in _sensors) { s.active = false; }
+         _sensor('P1').active = true;
+      });
+    }
+    if(log) _logAudit('Sistema restablecido a la posición HOME.', _NLogType.success);
   }
 
   Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
-    if (_pressure < 2.5) {
-      _logAudit('Falla de arranque: Presión neumática insuficiente.',
-          _NLogType.error);
+     final int numPiezas = int.tryParse(_piezasController.text) ?? 0;
+    if (numPiezas <= 0) {
+      _logAudit('ERROR: El número de ciclos debe ser mayor a 0.', _NLogType.error);
       return;
     }
-    setState(() {
-      _isCycleRunning = true;
-      _updatePermissions();
-    });
-    _logAudit('INICIANDO PRODUCCIÓN AUTOMÁTICA...', _NLogType.info);
+    if (_pressure < 2.5) {
+      _logAudit('Falla de arranque: Presión neumática insuficiente.', _NLogType.error);
+      return;
+    }
+    if(mounted) setState(() { _isCycleRunning = true; _updatePermissions(); });
+    _logAudit('══ INICIANDO CICLO AUTOMÁTICO PARA $numPiezas CICLOS ══', _NLogType.info);
+
+    for (int i = 0; i < numPiezas; i++) {
+      if (!_isCycleRunning) break;
+      _logAudit('--- Procesando pieza ${i + 1} de $numPiezas ---', _NLogType.info);
+      await _runSingleCycle();
+       if (!_isCycleRunning) {
+        _logAudit('Ciclo interrumpido por PARO DE EMERGENCIA.', _NLogType.error);
+        break;
+      }
+    }
+    if(mounted) setState(() { _isCycleRunning = false; _updatePermissions(); });
+    _logAudit('══ CICLO AUTOMÁTICO FINALIZADO ══', _NLogType.info);
+  }
+
+  Future<void> _runSingleCycle() async {
     try {
-      _toggleActuator('V1', true);
-      setState(() => _sensor('P1').active = false);
+      if (!_isCycleRunning || !mounted) return;
+      _toggleActuator('V1', true); setState(() => _sensor('P1').active = false);
       await Future.delayed(const Duration(seconds: 1));
-      _toggleActuator('V1', false);
-      _toggleActuator('M3', true);
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('V1', false);
+      _toggleActuator('M3', true); await Future.delayed(const Duration(milliseconds: 1500));
+      if (!_isCycleRunning || !mounted) return; setState(() => _sensor('P2').active = true);
+      _toggleActuator('M3', false); _toggleActuator('M2', true);
+      await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; setState(() => _sensor('S1').active = true);
+      _toggleActuator('M2', false); _toggleActuator('V3', true);
       await Future.delayed(const Duration(milliseconds: 1500));
-      setState(() => _sensor('P2').active = true);
-      _toggleActuator('M3', false);
-      _toggleActuator('M2', true);
-      await Future.delayed(const Duration(seconds: 1));
-      setState(() => _sensor('S1').active = true);
-      _toggleActuator('M2', false);
-      _toggleActuator('V3', true);
-      await Future.delayed(const Duration(milliseconds: 1500));
-      _toggleActuator('V3', false);
-      _toggleActuator('V4', true);
-      await Future.delayed(const Duration(seconds: 1));
-      _toggleActuator('V4', false);
-      setState(() {
-        _sensor('P2').active = false;
-        _sensor('S1').active = false;
-        _sensor('P1').active = true;
-        _piezas++;
-      });
-      _logAudit(
-          'CICLO EXITOSO. Pieza terminada y contabilizada.', _NLogType.info);
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('V3', false);
+      _toggleActuator('V4', true); await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('V4', false);
+      if(mounted) setState(() { _sensor('P2').active = false; _sensor('S1').active = false; _sensor('P1').active = true; _piezas++; });
+      _logAudit('CICLO EXITOSO. Pieza #${_piezas} terminada.', _NLogType.success);
     } catch (_) {
       _logAudit('Error en la secuencia automática.', _NLogType.error);
     }
-    setState(() {
-      _isCycleRunning = false;
-      _updatePermissions();
-    });
   }
 
   void _triggerEmergency() {
-    for (final a in _actuators) {
-      setState(() => a.on = false);
+    if(mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        for (final a in _actuators) { a.on = false; }
+      });
     }
-    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...',
-        _NLogType.error);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: kPanel,
-        title: const Text('📲 NOTIFICACIÓN PUSH AL SUPERVISOR',
-            style: TextStyle(color: kRedN, fontSize: 14)),
-        content: const Text(
-            'Alerta Crítica: Paro de Emergencia presionado en Línea 1.',
-            style: TextStyle(color: kText)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: kCyanN)),
-          )
-        ],
-      ),
-    );
+    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...', _NLogType.error);
+    if(mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: kPanel,
+          title: const Text('📲 NOTIFICACIÓN PUSH AL SUPERVISOR', style: TextStyle(color: kRedN, fontSize: 14)),
+          content: const Text('Alerta Crítica: Paro de Emergencia presionado en Línea 1.', style: TextStyle(color: kText)),
+          actions: [ TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: kCyanN))) ],
+        ),
+      );
+    }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -251,7 +268,6 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: SingleChildScrollView(
-          // ✅ TODO SE MUEVE
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -270,84 +286,99 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
-        decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: kCyanN, width: 2))),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kCyanN, width: 2))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('CENTRO NEUMÁTICO SCADA',
-                style: TextStyle(
-                    color: kCyanN,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.4)),
-            Text(_clock,
-                style: const TextStyle(
-                    color: kText, fontSize: 14, fontFamily: 'monospace')),
+            const Text('CENTRO NEUMÁTICO SCADA', style: TextStyle(color: kCyanN, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.4)),
+            Text(_clock, style: const TextStyle(color: kText, fontSize: 14, fontFamily: 'monospace')),
           ],
         ),
       );
 
-  // ── Top bar ───────────────────────────────────────────────────────────────
   Widget _buildTopBar() => Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kPanel,
-          border: Border.all(color: kBorderN),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: kPanel, border: Border.all(color: kBorderN), borderRadius: BorderRadius.circular(8)),
         child: Wrap(
           spacing: 16,
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            /* _labeledSelect('Rol:', _role, {
-              'Ingeniero': 'Ingeniero (Control Total)',
-              'Operador':  'Operador (Auto/Lectura)',
-            }, (v) { setState(() => _role = v!); _updatePermissions(); }), */
             _labeledSelect('Modo:', _mode, {
               'manual': 'Manual (Simulación Física)',
               'auto': 'Automático',
             }, (v) {
-              setState(() => _mode = v!);
+              if(mounted) setState(() => _mode = v!);
               _updatePermissions();
             }),
-            /*  _labeledSelect('Conexión:', _conn, {
-              'sim': 'Simulación Local',
-              'ws':  'Hardware Real (WebSocket)',
-            }, (v) { setState(() => _conn = v!); }), */
-            ElevatedButton(
+            _buildPiezasInput(),
+            ElevatedButton.icon(
               onPressed: _btnAutoEnabled ? _startAutoCycle : null,
+              icon: Icon(_isCycleRunning ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded, size: 16),
+              label: const Text('INICIAR CICLO'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kGreenN,
-                disabledBackgroundColor: const Color(0xFF333333),
-                disabledForegroundColor: const Color(0xFF666666),
-                foregroundColor: Colors.black,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                textStyle:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-              child: const Text('Iniciar Ciclo Automático'),
-            ),
-            /*  ElevatedButton(
-              onPressed: () => _logAudit('Auditoría exportada por el usuario.', _NLogType.audit),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kAudit,
-                foregroundColor: Colors.black,
+                backgroundColor: kGreenN, foregroundColor: Colors.black,
+                disabledBackgroundColor: const Color(0xFF333333), disabledForegroundColor: const Color(0xFF666666),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
-              child: const Text('Exportar Auditoría CSV'),
-            ), */
+            ),
+            ElevatedButton.icon(
+              onPressed: _triggerEmergency,
+              icon: const Icon(Icons.warning_amber_rounded, size: 16),
+              label: const Text('PARO EMERGENCIA'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kRedN, foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: _isCycleRunning ? null : () => _resetToHome(),
+              icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
+              label: const Text('RESTABLECER'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kCyanN, foregroundColor: Colors.black,
+                disabledBackgroundColor: const Color(0xFF333333), disabledForegroundColor: const Color(0xFF666666),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
             _kpiBox('Piezas Terminadas', '$_piezas'),
-            //_kpiBox('Eficiencia (OEE)',  '100%'),
           ],
         ),
       );
+
+  Widget _buildPiezasInput() => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text("Piezas:", style: TextStyle(color: kText, fontSize: 12)),
+      const SizedBox(width: 8),
+      SizedBox(
+        width: 60,
+        height: 38,
+        child: TextField(
+          controller: _piezasController,
+          enabled: _mode == 'auto',
+          keyboardType: TextInputType.number,
+          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+          textAlign: TextAlign.center,
+          style: TextStyle(color: _mode == 'auto' ? kCyanN : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: kBg,
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyanN : kBorderN)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyanN : kBorderN)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kCyanN, width: 2)),
+            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: kBorderN)),
+          ),
+        ),
+      ),
+    ],
+  );
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items,
           ValueChanged<String?> onChanged) =>
@@ -368,10 +399,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
               style: const TextStyle(color: kCyanN, fontSize: 12),
               icon: const Icon(Icons.arrow_drop_down, color: kCyanN, size: 18),
               isDense: true,
-              items: items.entries
-                  .map((e) =>
-                      DropdownMenuItem(value: e.key, child: Text(e.value)))
-                  .toList(),
+              items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
               onChanged: onChanged,
             ),
           ),
@@ -388,13 +416,10 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(label, style: const TextStyle(color: kText, fontSize: 11)),
           const SizedBox(height: 2),
-          Text(value,
-              style: const TextStyle(
-                  color: kGreenN, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(color: kGreenN, fontSize: 24, fontWeight: FontWeight.bold)),
         ]),
       );
 
-  // ── Row 1: Digital Twin + Sensores ────────────────────────────────────────
   Widget _buildRow1() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -413,65 +438,36 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
         ),
         child: Stack(children: [
           const Positioned(
-            top: 10,
-            right: 10,
-            child: Text('Gemelo Digital 2D',
-                style: TextStyle(
-                    color: kCyanN, fontWeight: FontWeight.bold, fontSize: 13)),
+            top: 10, right: 10,
+            child: Text('Gemelo Digital 2D', style: TextStyle(color: kCyanN, fontWeight: FontWeight.bold, fontSize: 13)),
           ),
-          Positioned(
-              top: 20,
-              left: 20,
-              child:
-                  _dtPart('M1', 'Compresor\n(M1)', w: 80, h: 80, circle: true)),
-          Positioned(
-              top: 100, left: 150, child: _dtPart('V1', 'V1', w: 40, h: 40)),
-          Positioned(
-              top: 150,
-              left: 150,
-              child: _dtPart('M3', 'Banda Transportadora (M3)', w: 200, h: 40)),
-          Positioned(
-              top: 60, right: 80, child: _dtPart('V3', 'V3', w: 40, h: 40)),
-          Positioned(
-              top: 120,
-              right: 50,
-              child: _dtPart('M2', 'Mesa\n(M2)', w: 100, h: 100, circle: true)),
-          Positioned(
-              top: 230, right: 80, child: _dtPart('V4', 'V4', w: 40, h: 40)),
+          Positioned(top: 20, left: 20, child: _dtPart('M1', 'Compresor\n(M1)', w: 80, h: 80, circle: true)),
+          Positioned(top: 100, left: 150, child: _dtPart('V1', 'V1', w: 40, h: 40)),
+          Positioned(top: 150, left: 150, child: _dtPart('M3', 'Banda (M3)', w: 200, h: 40)),
+          Positioned(top: 60, right: 80, child: _dtPart('V3', 'V3', w: 40, h: 40)),
+          Positioned(top: 120, right: 50, child: _dtPart('M2', 'Mesa\n(M2)', w: 100, h: 100, circle: true)),
+          Positioned(top: 230, right: 80, child: _dtPart('V4', 'V4', w: 40, h: 40)),
         ]),
       );
 
-  Widget _dtPart(String id, String label,
-      {required double w, required double h, bool circle = false}) {
+  Widget _dtPart(String id, String label, {required double w, required double h, bool circle = false}) {
     bool active = false;
-    try {
-      active = _actuators.firstWhere((a) => a.id == id).on;
-    } catch (_) {}
+    try { active = _actuators.firstWhere((a) => a.id == id).on; } catch (_) {}
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: w,
-      height: h,
-      alignment: Alignment.center,
+      width: w, height: h, alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? kGreenN : const Color(0xFF333333),
-        border: Border.all(
-            color: active ? Colors.white : const Color(0xFF555555), width: 2),
+        border: Border.all(color: active ? Colors.white : const Color(0xFF555555), width: 2),
         borderRadius: BorderRadius.circular(circle ? h / 2 : 4),
-        boxShadow: active
-            ? [BoxShadow(color: kGreenN.withOpacity(0.6), blurRadius: 15)]
-            : null,
+        boxShadow: active ? [BoxShadow(color: kGreenN.withOpacity(0.6), blurRadius: 15)] : null,
       ),
-      child: Text(label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              color: active ? Colors.black : Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.bold)),
+      child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
   Widget _buildSensorsPanel() => _panel(
-        title: 'Sensores (Click para simular en Manual)',
+        title: 'Sensores (Click para simular)',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _sensors.map(_sensorRow).toList(),
@@ -480,46 +476,26 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
 
   Widget _sensorRow(_SensorModel s) {
     final bool isEmergency = s.id == 'S2';
-    final Color ledColor = isEmergency && s.active
-        ? kRedN
-        : (!isEmergency && s.active)
-            ? kGreenN
-            : const Color(0xFF333333);
+    final Color ledColor = isEmergency && s.active ? kRedN : (!isEmergency && s.active) ? kGreenN : const Color(0xFF333333);
     return GestureDetector(
       onTap: () => isEmergency ? _triggerEmergency() : _toggleSensor(s.id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(4),
-        ),
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(4)),
         child: Row(children: [
-          Expanded(
-              child: Text(s.label,
-                  style: const TextStyle(color: kText, fontSize: 12))),
+          Expanded(child: Text(s.label, style: const TextStyle(color: kText, fontSize: 12))),
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: ledColor,
-              boxShadow: s.active
-                  ? [
-                      BoxShadow(
-                          color: ledColor.withOpacity(0.8), blurRadius: 10)
-                    ]
-                  : null,
-            ),
+            width: 14, height: 14,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: ledColor, boxShadow: s.active ? [BoxShadow(color: ledColor.withOpacity(0.8), blurRadius: 10)] : null),
           ),
         ]),
       ),
     );
   }
 
-  // ── Row 2: Actuadores + Audit ─────────────────────────────────────────────
   Widget _buildRow2() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -544,24 +520,12 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
   Widget _actuatorRow(_ActuatorModel a) => Container(
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(4),
-        ),
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(4)),
         child: Row(children: [
-          Expanded(
-              child: Text(a.label,
-                  style: const TextStyle(color: kText, fontSize: 12))),
+          Expanded(child: Text(a.label, style: const TextStyle(color: kText, fontSize: 12))),
           Transform.scale(
             scale: 0.75,
-            child: Switch(
-              value: a.on,
-              onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
-              activeColor: Colors.white,
-              activeTrackColor: kCyanN,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: const Color(0xFF333333),
-            ),
+            child: Switch(value: a.on, onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v), activeColor: Colors.white, activeTrackColor: kCyanN, inactiveThumbColor: Colors.white, inactiveTrackColor: const Color(0xFF333333)),
           ),
         ]),
       );
@@ -570,11 +534,7 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
         title: 'Auditoría (Audit Trail) y Alertas',
         child: Container(
           height: 180,
-          decoration: BoxDecoration(
-            color: kBg,
-            border: Border.all(color: kBorderN),
-            borderRadius: BorderRadius.circular(4),
-          ),
+          decoration: BoxDecoration(color: kBg, border: Border.all(color: kBorderN), borderRadius: BorderRadius.circular(4)),
           padding: const EdgeInsets.all(10),
           child: ListView.builder(
             controller: _logScroll,
@@ -583,21 +543,13 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
               final l = _logs[i];
               return Text(
                 '[${l.time}] [${l.role}] - ${l.message}',
-                style: TextStyle(
-                  color: l.color,
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  fontWeight: l.type == _NLogType.audit
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                ),
+                style: TextStyle(color: l.color, fontSize: 11, fontFamily: 'monospace', fontWeight: l.type == _NLogType.audit ? FontWeight.bold : FontWeight.normal),
               );
             },
           ),
         ),
       );
 
-  // ── Chart ──────────────────────────────────────────────────────────────────
   Widget _buildChartPanel() => _panel(
         title: 'Presión Neumática (Voltaje Analógico)',
         child: SizedBox(
@@ -606,7 +558,6 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
         ),
       );
 
-  // ── Panel wrapper ──────────────────────────────────────────────────────────
   Widget _panel({required String title, required Widget child}) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -620,13 +571,8 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
           children: [
             Container(
               padding: const EdgeInsets.only(bottom: 8),
-              decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: kBorderN))),
-              child: Text(title,
-                  style: const TextStyle(
-                      color: kCyanN,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold)),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kBorderN))),
+              child: Text(title, style: const TextStyle(color: kCyanN, fontSize: 13, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             child,
@@ -635,7 +581,6 @@ class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
       );
 }
 
-// ── Chart Painter ──────────────────────────────────────────────────────────
 class _ChartPainter extends CustomPainter {
   final List<double> data;
   _ChartPainter(this.data);
@@ -643,61 +588,24 @@ class _ChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const double maxY = 6;
-    final gridPaint = Paint()
-      ..color = const Color(0xFF1A3644)
-      ..strokeWidth = 0.5;
-
+    final gridPaint = Paint()..color = const Color(0xFF1A3644)..strokeWidth = 0.5;
     for (int i = 0; i <= 6; i++) {
       final y = size.height - (i / maxY) * size.height;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-      final tp = TextPainter(
-        text: TextSpan(
-            text: '$i',
-            style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final tp = TextPainter(text: TextSpan(text: '$i', style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)), textDirection: TextDirection.ltr)..layout();
       tp.paint(canvas, Offset(2, y - 10));
     }
-
     if (data.length < 2) return;
-
     final path = Path();
     for (int i = 0; i < data.length; i++) {
       final x = i / (data.length - 1) * size.width;
       final y = size.height - (data[i] / maxY) * size.height;
       i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
     }
-
-    final fillPath = Path.from(path)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-
-    canvas.drawPath(
-      fillPath,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF00EAFF).withOpacity(0.25),
-            const Color(0xFF00EAFF).withOpacity(0.0),
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-        ..style = PaintingStyle.fill,
-    );
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF00EAFF)
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    final fillPath = Path.from(path)..lineTo(size.width, size.height)..lineTo(0, size.height)..close();
+    canvas.drawPath(fillPath, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [const Color(0xFF00EAFF).withOpacity(0.25), const Color(0xFF00EAFF).withOpacity(0.0)]).createShader(Rect.fromLTWH(0, 0, size.width, size.height))..style = PaintingStyle.fill);
+    canvas.drawPath(path, Paint()..color = const Color(0xFF00EAFF)..strokeWidth = 2..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
   }
-
   @override
   bool shouldRepaint(covariant _ChartPainter old) => true;
 }
