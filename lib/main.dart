@@ -1,75 +1,3 @@
-/* import 'package:flutter/material.dart';
-//import 'login.dart';
-//import 'presentacion.dart';
-//import 'historial.dart';
-//import 'historialylogs.dart';
-//import 'reportes.dart';
-//import 'genrarPDF.dart';
-//import 'analitycs.dart';
-//import 'usuarios.dart';
-//import 'nuevousuario.dart';
-//import 'actividades_recientes.dart';
-//import 'conexiones_tablas.dart';
-//import 'diagnostico_conexiones.dart';
-//import 'conexiones_grid.dart';
-//import 'nube.dart';
-import 'permisos.dart';
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-
-
-
-      //home: const LoginApp(),
-      //home: const PresentationApp(),
-      //home: const IndustrialLogsApp(),
-      //home: const IndustrialLogsApp(),
-      //home: const AnalyticsApp(),
-      //home: const ReporteApp(),
-      //home: const AnalyticsApp(),
-      //home: const UsuariosApp(),
-      //home: const NuevoUsuarioApp(),
-      //home: const ActividadesApp(),
-      //home: const ConexionesApp(),
-      //home: const DiagnosticoApp(),
-      //home: const ConexionesGridApp(),
-      //home: const CloudSyncApp(),
-      home: const PermisosApp(),
-    );
-  }
-}
-  
-
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ============================================================
 //  HITECH INGENIUM  ·  SCADA MASTER  ·  main.dart
@@ -89,7 +17,6 @@ import 'scada_neumatico.dart' show ScadaNeumaticoBoard;
 import 'main_robot_3_ejes.dart' show ScadaRobotDashboard;
 import 'main_maquinados.dart' show ScadaMaquinadosDashboard;
 import 'main_prensado.dart' show ScadaPrensadoScreen;
-import 'reportes.dart' show DashboardPage;
 
 
 
@@ -148,7 +75,6 @@ enum AppView {
   conexiones,
   diagnostico_conexiones,
   historial,
-  analytics,
   usuarios,
   nube,
   chatbot,
@@ -310,8 +236,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
 
       case AppView.historial:
         return 'Historial de Eventos';
-      case AppView.analytics:
-        return 'Analytics / Reportes';
       case AppView.usuarios:
         return 'Gestión de Usuarios';
       case AppView.nube:
@@ -411,7 +335,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
          _navTile('💻', 'diagnostico_Conexiones', AppView.diagnostico_conexiones, const Color.fromARGB(255, 58, 145, 226), compact),
 
         _navTile('📋', 'Historial / Logs', AppView.historial, kOrange, compact),
-        _navTile('📈', 'Analytics', AppView.analytics, kIndigo, compact),
         _navTile('👥', 'Usuarios', AppView.usuarios, kPink, compact),
         _navTile('☁️', 'Cloud Sync', AppView.nube, kCyan, compact),
         _navTile('🤖', 'Chatbot', AppView.chatbot, kIndigo, compact),
@@ -706,14 +629,14 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         ),
       );
 
-  // ── Vista actual ───────────────────────────────────────────────────────────
+  // ── Vista actual ──────────────────────────────────────────────────────────
   Widget _buildView() {
     switch (_view) {
 
       
       // ── Estaciones SCADA (paneles vacíos por ahora) ───────────────────────
       case AppView.dashboard:
-  return const DashboardPage();
+  return const AnalyticsDashboard();
 
 
       case AppView.neumatico:
@@ -769,8 +692,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
 
       case AppView.historial:
         return const LogsScreen();
-      case AppView.analytics:
-        return const AnalyticsDashboard();
       case AppView.usuarios:
         return const UsuariosScreen();
       case AppView.nube:
