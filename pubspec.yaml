@@ -22,6 +22,8 @@ dependencies:
   lottie: ^3.3.3
   flutter_animate: ^4.5.2
   font_awesome_flutter: ^11.0.0
+  pdf: ^3.10.8
+  printing: ^5.11.1
 
 dev_dependencies:
   flutter_test:

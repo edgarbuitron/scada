@@ -1,24 +1,19 @@
-// TODO Implement this library.
-//  8 Relés de salida · 6 Sensores (encoders + referencias)
-//  Secuencia: Rotar Base → Expandir Brazo → Eje Z → Gripper
-// ============================================================
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 
-// ── Paleta ────────────────────────────────────────────────
+// ── Paleta Unificada (Basada en Neumático) ──────────────────────────────────
 const Color kBg = Color(0xFF081014);
 const Color kPanel = Color(0xFF11222C);
-const Color kCyan = Color(0xFF00EAFF);
+const Color kMachine = Color(0xFF00EAFF); // Color principal de acento (antes era kRed)
 const Color kGreen = Color(0xFF00FF88);
 const Color kRed = Color(0xFFFF3366);
 const Color kBorder = Color(0xFF1A3644);
 const Color kText = Color(0xFFC5D1D8);
 const Color kAudit = Color(0xFFFFAA00);
 const Color kDark = Color(0xFF0C1820);
-const Color kMachine = Color(0xFFFF3366); // rojo para robot
 
 class ScadaRobot3EjesScreen extends StatelessWidget {
   const ScadaRobot3EjesScreen({super.key});
@@ -259,7 +254,7 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           backgroundColor: kPanel,
           title: const Text('⚠ PARO DE EMERGENCIA', style: TextStyle(color: kRed, fontSize: 15)),
           content: const Text('Todos los actuadores han sido desactivados.\nRevise el robot antes de reiniciar.', style: TextStyle(color: kText)),
-          actions: [ TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: kCyan))) ],
+          actions: [ TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: kMachine))) ],
         ),
       );
     }
@@ -452,8 +447,8 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
               icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
               label: const Text('RESTABLECER'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kCyan,
-                foregroundColor: kBg,
+                backgroundColor: kMachine, // Usar el color principal
+                foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -478,14 +473,14 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
           textAlign: TextAlign.center,
-          style: TextStyle(color: _mode == 'auto' ? kCyan : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: _mode == 'auto' ? kMachine : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             filled: true,
             fillColor: kBg,
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kCyan, width: 2)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kMachine, width: 2)),
             disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: kBorder)),
           ),
         ),
@@ -502,14 +497,14 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
               color: kBg,
-              border: Border.all(color: kCyan),
+              border: Border.all(color: kMachine),
               borderRadius: BorderRadius.circular(4)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: val,
               dropdownColor: kPanel,
-              style: const TextStyle(color: kCyan, fontSize: 12),
-              icon: const Icon(Icons.arrow_drop_down, color: kCyan, size: 18),
+              style: const TextStyle(color: kMachine, fontSize: 12),
+              icon: const Icon(Icons.arrow_drop_down, color: kMachine, size: 18),
               isDense: true,
               items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
               onChanged: fn,
@@ -688,7 +683,7 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
                   style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                   children: [
                     TextSpan(text: '[${l.time}] ', style: const TextStyle(color: Color(0xFF546E7A))),
-                    TextSpan(text: '[${l.user}] - ', style: const TextStyle(color: kCyan)),
+                    TextSpan(text: '[${l.user}] - ', style: const TextStyle(color: kMachine)), // Usar color principal
                     TextSpan(text: l.message, style: TextStyle(color: l.color)),
                   ],
                 )),
@@ -698,11 +693,11 @@ class _ScadaDashboardState extends State<ScadaRobotDashboard>
         ),
       );
 
-  Widget _panel({
+  Widget _panel({ 
     required String title,
     required Widget child,
     double? height,
-    Color titleColor = kCyan,
+    Color titleColor = kMachine, // Usar color principal por defecto
   }) =>
       Container(
         height: height,

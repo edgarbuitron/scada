@@ -1,23 +1,17 @@
-// ============================================================
-//  CENTRO DE MAQUINADOS SCADA 4.0  –  Flutter
-//  Art. No. TMINL24-A  –  Indexed Line 24V
-//  7 Estados · 7 Sensores · 8 Actuadores (M1-M8)
-// ============================================================
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// ── Paleta ────────────────────────────────────────────────
+// ── Paleta Unificada (Basada en Neumático) ──────────────────────────────────
 const Color kBg = Color(0xFF081014);
 const Color kPanel = Color(0xFF11222C);
-const Color kCyan = Color(0xFF00EAFF);
+const Color kMachine = Color(0xFF00EAFF); // Color principal de acento (antes kGreen)
 const Color kGreen = Color(0xFF00FF88);
 const Color kRed = Color(0xFFFF3366);
 const Color kBorder = Color(0xFF1A3644);
 const Color kText = Color(0xFFC5D1D8);
 const Color kAudit = Color(0xFFFFAA00);
 const Color kDark = Color(0xFF0C1820);
-const Color kMachine = Color(0xFF00FF88); // verde para maquinados
 
 // ── App ───────────────────────────────────────────────────
 class ScadaMaquinadosScreen extends StatelessWidget {
@@ -28,7 +22,7 @@ class ScadaMaquinadosScreen extends StatelessWidget {
         title: 'Centro de Maquinados',
         theme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: kBg,
-          colorScheme: const ColorScheme.dark(primary: kCyan),
+          colorScheme: const ColorScheme.dark(primary: kMachine),
         ),
         home: const ScadaMaquinadosDashboard(),
       );
@@ -237,7 +231,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: kCyan)))
+                child: const Text('OK', style: TextStyle(color: kMachine))) // Usar color principal
           ],
         ),
       );
@@ -488,8 +482,8 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
               icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
               label: const Text('RESTABLECER'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kCyan,
-                foregroundColor: kBg,
+                backgroundColor: kMachine, // Usar color principal
+                foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
                 padding:
@@ -516,7 +510,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _mode == 'auto' ? kCyan : Colors.grey,
+            color: _mode == 'auto' ? kMachine : Colors.grey,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -526,15 +520,15 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder),
+              borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(color: _mode == 'auto' ? kCyan : kBorder),
+              borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: kCyan, width: 2),
+              borderSide: const BorderSide(color: kMachine, width: 2),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
@@ -555,14 +549,14 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
               color: kBg,
-              border: Border.all(color: kCyan),
+              border: Border.all(color: kMachine), // Usar color principal
               borderRadius: BorderRadius.circular(4)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: val,
               dropdownColor: kPanel,
-              style: const TextStyle(color: kCyan, fontSize: 12),
-              icon: const Icon(Icons.arrow_drop_down, color: kCyan, size: 18),
+              style: const TextStyle(color: kMachine, fontSize: 12), // Usar color principal
+              icon: const Icon(Icons.arrow_drop_down, color: kMachine, size: 18), // Usar color principal
               isDense: true,
               items: items.entries
                   .map((e) =>
@@ -700,18 +694,18 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
           height: 55,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active ? kCyan.withOpacity(0.15) : const Color(0xFF1A2233),
+            color: active ? kMachine.withOpacity(0.15) : const Color(0xFF1A2233), // Color de empujador
             border: Border.all(
-                color: active ? kCyan : const Color(0xFF334455), width: 1.5),
+                color: active ? kMachine : const Color(0xFF334455), width: 1.5),
             borderRadius: BorderRadius.circular(4),
             boxShadow: active
-                ? [BoxShadow(color: kCyan.withOpacity(0.4), blurRadius: 8)]
+                ? [BoxShadow(color: kMachine.withOpacity(0.4), blurRadius: 8)]
                 : null,
           ),
           child: Text(label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: active ? kCyan : kText.withOpacity(0.4),
+                  color: active ? kMachine : kText.withOpacity(0.4),
                   fontSize: 8,
                   fontWeight: FontWeight.bold)),
         ),
@@ -829,8 +823,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                       fontSize: 11,
                       fontWeight: FontWeight.bold)),
               Text(a.description,
-                  style:
-                      const TextStyle(color: Color(0xFF546E7A), fontSize: 9)),
+                  style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)),
             ],
           )),
           Transform.scale(
@@ -872,7 +865,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
                         style: const TextStyle(color: Color(0xFF546E7A))),
                     TextSpan(
                         text: '[${l.user}] - ',
-                        style: const TextStyle(color: kCyan)),
+                        style: const TextStyle(color: kMachine)), // Usar color principal
                     TextSpan(text: l.message, style: TextStyle(color: l.color)),
                   ],
                 )),
@@ -886,7 +879,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
     required String title,
     required Widget child,
     double? height,
-    Color titleColor = kCyan,
+    Color titleColor = kMachine, // Usar color principal por defecto
   }) =>
       Container(
         height: height,

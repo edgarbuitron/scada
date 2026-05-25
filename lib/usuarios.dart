@@ -18,7 +18,14 @@ const kRowHover = Color(0xFF182336);
 
 // ─── Modelo ───────────────────────────────────────────────────────────────────
 class Usuario {
-  final String id, nombre, numero, correo, rol, ultimoAcceso, fechaRegistro;
+  final String id,
+      nombre,
+      numero,
+      correo,
+      rol,
+      ultimoAcceso,
+      fechaRegistro,
+      numeroControl;
   final int semestre;
   final bool activo;
   const Usuario(
@@ -30,7 +37,8 @@ class Usuario {
       required this.activo,
       required this.ultimoAcceso,
       required this.semestre,
-      required this.fechaRegistro});
+      required this.fechaRegistro,
+      required this.numeroControl});
 }
 
 // Lista base (ya no const para poder copiarla en el estado)
@@ -44,7 +52,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 10:42 AM',
       semestre: 8,
-      fechaRegistro: '15/01/2024'),
+      fechaRegistro: '15/01/2024',
+      numeroControl: '12345678'),
   Usuario(
       id: 'U002',
       nombre: 'María López',
@@ -54,7 +63,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 09:15 AM',
       semestre: 5,
-      fechaRegistro: '14/02/2024'),
+      fechaRegistro: '14/02/2024',
+      numeroControl: '87654321'),
   Usuario(
       id: 'U003',
       nombre: 'Carlos Ruiz',
@@ -64,7 +74,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '19/05/2025 05:30 PM',
       semestre: 9,
-      fechaRegistro: '10/01/2024'),
+      fechaRegistro: '10/01/2024',
+      numeroControl: '12348765'),
   Usuario(
       id: 'U004',
       nombre: 'Ana Torres',
@@ -74,7 +85,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 08:20 AM',
       semestre: 3,
-      fechaRegistro: '20/01/2024'),
+      fechaRegistro: '20/01/2024',
+      numeroControl: '56781234'),
   Usuario(
       id: 'U005',
       nombre: 'Luis Miguel',
@@ -84,7 +96,8 @@ final _seedUsers = <Usuario>[
       activo: false,
       ultimoAcceso: '15/05/2025 11:02 AM',
       semestre: 12,
-      fechaRegistro: '01/12/2023'),
+      fechaRegistro: '01/12/2023',
+      numeroControl: '98765432'),
   Usuario(
       id: 'U006',
       nombre: 'Pedro Sánchez',
@@ -94,7 +107,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '18/05/2025 02:10 PM',
       semestre: 1,
-      fechaRegistro: '05/03/2024'),
+      fechaRegistro: '05/03/2024',
+      numeroControl: '21098765'),
   Usuario(
       id: 'U007',
       nombre: 'Sofía Herrera',
@@ -104,7 +118,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 10:10 AM',
       semestre: 6,
-      fechaRegistro: '19/02/2024'),
+      fechaRegistro: '19/02/2024',
+      numeroControl: '54321098'),
   Usuario(
       id: 'U008',
       nombre: 'Miguel Ángel',
@@ -114,7 +129,8 @@ final _seedUsers = <Usuario>[
       activo: false,
       ultimoAcceso: '10/05/2025 04:45 PM',
       semestre: 11,
-      fechaRegistro: '11/11/2023'),
+      fechaRegistro: '11/11/2023',
+      numeroControl: '87651234'),
   Usuario(
       id: 'U009',
       nombre: 'Laura Castro',
@@ -124,7 +140,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 07:55 AM',
       semestre: 4,
-      fechaRegistro: '25/01/2024'),
+      fechaRegistro: '25/01/2024',
+      numeroControl: '43215678'),
   Usuario(
       id: 'U010',
       nombre: 'Diego Flores',
@@ -134,7 +151,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 11:30 AM',
       semestre: 9,
-      fechaRegistro: '13/01/2024'),
+      fechaRegistro: '13/01/2024',
+      numeroControl: '98761234'),
   Usuario(
       id: 'U011',
       nombre: 'Carmen Vega',
@@ -144,7 +162,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '19/05/2025 03:20 PM',
       semestre: 10,
-      fechaRegistro: '04/12/2023'),
+      fechaRegistro: '04/12/2023',
+      numeroControl: '12349876'),
   Usuario(
       id: 'U012',
       nombre: 'Roberto Mora',
@@ -154,7 +173,8 @@ final _seedUsers = <Usuario>[
       activo: false,
       ultimoAcceso: '12/05/2025 09:00 AM',
       semestre: 2,
-      fechaRegistro: '01/02/2024'),
+      fechaRegistro: '01/02/2024',
+      numeroControl: '56784321'),
   Usuario(
       id: 'U013',
       nombre: 'Elena Ríos',
@@ -164,7 +184,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '17/05/2025 04:40 PM',
       semestre: 1,
-      fechaRegistro: '08/03/2024'),
+      fechaRegistro: '08/03/2024',
+      numeroControl: '87654321'),
   Usuario(
       id: 'U014',
       nombre: 'Héctor Ponce',
@@ -174,7 +195,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 08:00 AM',
       semestre: 7,
-      fechaRegistro: '22/02/2024'),
+      fechaRegistro: '22/02/2024',
+      numeroControl: '12345678'),
   Usuario(
       id: 'U015',
       nombre: 'Patricia Leal',
@@ -184,7 +206,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 10:55 AM',
       semestre: 11,
-      fechaRegistro: '09/01/2024'),
+      fechaRegistro: '09/01/2024',
+      numeroControl: '87654321'),
   Usuario(
       id: 'U016',
       nombre: 'Fernando Gil',
@@ -194,7 +217,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 07:30 AM',
       semestre: 3,
-      fechaRegistro: '28/01/2024'),
+      fechaRegistro: '28/01/2024',
+      numeroControl: '12348765'),
   Usuario(
       id: 'U017',
       nombre: 'Nora Salas',
@@ -204,7 +228,8 @@ final _seedUsers = <Usuario>[
       activo: false,
       ultimoAcceso: '08/05/2025 01:15 PM',
       semestre: 12,
-      fechaRegistro: '02/12/2023'),
+      fechaRegistro: '02/12/2023',
+      numeroControl: '56781234'),
   Usuario(
       id: 'U018',
       nombre: 'Andrés Meraz',
@@ -214,7 +239,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '19/05/2025 06:10 PM',
       semestre: 5,
-      fechaRegistro: '18/02/2024'),
+      fechaRegistro: '18/02/2024',
+      numeroControl: '98765432'),
   Usuario(
       id: 'U019',
       nombre: 'Silvia Paredes',
@@ -224,7 +250,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '16/05/2025 03:50 PM',
       semestre: 1,
-      fechaRegistro: '10/03/2024'),
+      fechaRegistro: '10/03/2024',
+      numeroControl: '21098765'),
   Usuario(
       id: 'U020',
       nombre: 'Tomás Ibarra',
@@ -234,7 +261,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 09:45 AM',
       semestre: 8,
-      fechaRegistro: '24/02/2024'),
+      fechaRegistro: '24/02/2024',
+      numeroControl: '54321098'),
   Usuario(
       id: 'U021',
       nombre: 'Claudia Reyes',
@@ -244,7 +272,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '18/05/2025 11:20 AM',
       semestre: 6,
-      fechaRegistro: '21/02/2024'),
+      fechaRegistro: '21/02/2024',
+      numeroControl: '87651234'),
   Usuario(
       id: 'U022',
       nombre: 'Marcos Ávila',
@@ -254,7 +283,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 08:40 AM',
       semestre: 10,
-      fechaRegistro: '06/12/2023'),
+      fechaRegistro: '06/12/2023',
+      numeroControl: '43215678'),
   Usuario(
       id: 'U023',
       nombre: 'Isabel Quiroz',
@@ -264,7 +294,8 @@ final _seedUsers = <Usuario>[
       activo: true,
       ultimoAcceso: '20/05/2025 10:05 AM',
       semestre: 9,
-      fechaRegistro: '12/01/2024'),
+      fechaRegistro: '12/01/2024',
+      numeroControl: '98761234'),
   Usuario(
       id: 'U024',
       nombre: 'Samuel Garza',
@@ -274,7 +305,8 @@ final _seedUsers = <Usuario>[
       activo: false,
       ultimoAcceso: '05/05/2025 02:30 PM',
       semestre: 2,
-      fechaRegistro: '03/02/2024'),
+      fechaRegistro: '03/02/2024',
+      numeroControl: '12349876'),
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -305,6 +337,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   late List<Usuario> _users;
 
   final _nombreSearchController = TextEditingController();
+  final _numeroControlSearchController = TextEditingController();
   final _numeroSearchController = TextEditingController();
   final _emailSearchController = TextEditingController();
   int? _selectedSemestre;
@@ -321,6 +354,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
     void listener() => setState(() => _page = 1);
     _nombreSearchController.addListener(listener);
+    _numeroControlSearchController.addListener(listener);
     _numeroSearchController.addListener(listener);
     _emailSearchController.addListener(listener);
   }
@@ -328,6 +362,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   @override
   void dispose() {
     _nombreSearchController.dispose();
+    _numeroControlSearchController.dispose();
     _numeroSearchController.dispose();
     _emailSearchController.dispose();
     super.dispose();
@@ -339,21 +374,28 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     if (_nombreSearchController.text.isNotEmpty) {
       final q = _nombreSearchController.text.toLowerCase();
       filteredUsers = filteredUsers
-          .where((u) => u.nombre.toLowerCase().contains(q))
+          .where((u) => u.nombre.toLowerCase().startsWith(q))
+          .toList();
+    }
+
+    if (_numeroControlSearchController.text.isNotEmpty) {
+      final q = _numeroControlSearchController.text.toLowerCase();
+      filteredUsers = filteredUsers
+          .where((u) => u.numeroControl.toLowerCase().startsWith(q))
           .toList();
     }
 
     if (_numeroSearchController.text.isNotEmpty) {
       final q = _numeroSearchController.text.toLowerCase();
       filteredUsers = filteredUsers
-          .where((u) => u.numero.toLowerCase().contains(q))
+          .where((u) => u.numero.toLowerCase().startsWith(q))
           .toList();
     }
 
     if (_emailSearchController.text.isNotEmpty) {
       final q = _emailSearchController.text.toLowerCase();
       filteredUsers = filteredUsers
-          .where((u) => u.correo.toLowerCase().contains(q))
+          .where((u) => u.correo.toLowerCase().startsWith(q))
           .toList();
     }
 
@@ -569,6 +611,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           ),
           const SizedBox(width: 16),
           _buildSearchTextField(
+            controller: _numeroControlSearchController,
+            hintText: 'Filtrar por N° Control...',
+          ),
+          const SizedBox(width: 16),
+          _buildSearchTextField(
             controller: _numeroSearchController,
             hintText: 'Filtrar por número...',
           ),
@@ -716,6 +763,42 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                 sub: 'usuarios inactivos')),
       ]);
 
+  // Construye el mensaje a mostrar cuando la tabla está vacía por los filtros
+  Widget _buildEmptyMessage() {
+    String message = "No se encontraron usuarios que coincidan con los filtros aplicados.";
+
+    if (_nombreSearchController.text.isNotEmpty) {
+      message = "No se encontraron resultados para el nombre: '${_nombreSearchController.text}'";
+    } else if (_numeroControlSearchController.text.isNotEmpty) {
+      message = "No se encontraron resultados para el N° de Control: '${_numeroControlSearchController.text}'";
+    } else if (_numeroSearchController.text.isNotEmpty) {
+      message = "No se encontraron resultados para el número: '${_numeroSearchController.text}'";
+    } else if (_emailSearchController.text.isNotEmpty) {
+      message = "No se encontraron resultados para el correo: '${_emailSearchController.text}'";
+    } else if (_selectedSemestre != null) {
+      message = "No se encontraron usuarios en el semestre $_selectedSemestre.";
+    } else if (_selectedEstado != null) {
+      message = "No se encontraron usuarios con el estado '${_selectedEstado! ? 'Activo' : 'Inactivo'}'.";
+    } else if (_selectedFechaRegistro != null) {
+      final d = _selectedFechaRegistro!;
+      message = "No se encontraron usuarios registrados el ${d.day}/${d.month}/${d.year}.";
+    } else if (_selectedUltimoAcceso != null) {
+      final d = _selectedUltimoAcceso!;
+      message = "No se encontraron usuarios con último acceso el ${d.day}/${d.month}/${d.year}.";
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16, color: kMuted2),
+        ),
+      ),
+    );
+  }
+
   // ── Tabla ──────────────────────────────────────────────────────────────────
   Widget _buildTable() => Container(
         decoration: BoxDecoration(
@@ -723,29 +806,31 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kBorder),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: 1250,
-            child: Column(
-              children: [
-                const _TableHeader(),
-                const Divider(height: 1, color: kBorder),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: _pageUsers.length,
-                    separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: kBorder),
-                    itemBuilder: (_, i) => _UserRow(
-                      user: _pageUsers[i],
-                      onDelete: () => _onDeleteTap(_pageUsers[i]),
+        child: _filtered.isEmpty
+          ? _buildEmptyMessage()
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 1400,
+                child: Column(
+                  children: [
+                    const _TableHeader(),
+                    const Divider(height: 1, color: kBorder),
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: _pageUsers.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, color: kBorder),
+                        itemBuilder: (_, i) => _UserRow(
+                          user: _pageUsers[i],
+                          onDelete: () => _onDeleteTap(_pageUsers[i]),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
       );
 
   // ── Paginación ─────────────────────────────────────────────────────────────
@@ -753,6 +838,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     final total = _filtered.length;
     final start = (_page - 1) * _perPage + 1;
     final end = ((_page - 1) * _perPage + _perPage).clamp(0, total);
+
+    // No mostrar paginación si no hay resultados
+    if (total == 0) {
+      return const SizedBox.shrink();
+    }
 
     List<Widget> pageButtons = [];
     const maxVisible = 3;
@@ -1056,6 +1146,7 @@ class _TableHeader extends StatelessWidget {
           children: const [
             _TH('ID', flex: 2),
             _TH('Nombre', flex: 4),
+            _TH('N° Control', flex: 4),
             _TH('Número', flex: 4),
             _TH('Correo', flex: 6),
             _TH('Semestre', flex: 3),
@@ -1122,6 +1213,11 @@ class _UserRowState extends State<_UserRow> {
                       fontSize: 13,
                       color: kText,
                       fontWeight: FontWeight.w500))),
+          // N° Control
+          Expanded(
+              flex: 4,
+              child: Text(u.numeroControl,
+                  style: const TextStyle(fontSize: 13, color: kText))),
           // Número
           Expanded(
               flex: 4,

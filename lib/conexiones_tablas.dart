@@ -49,7 +49,6 @@ class ConexionesApp extends StatelessWidget {
       );
 }
 
-// Cambiado a StatefulWidget para que los números puedan actualizarse
 class ConexionesScreen extends StatefulWidget {
   const ConexionesScreen({super.key});
   @override
@@ -60,7 +59,7 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
   // Lista de maquetas
   final List<Maqueta> _listaMaquetas = [
     Maqueta(
-        nombre: 'centro Neumático',
+        nombre: 'Centro Neumático',
         subtitulo: 'Estación Neumática',
         ip: '192.168.4.1',
         ssid: 'ESP32_NEUMATICA',
@@ -69,7 +68,7 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
         latencia: '12 ms',
         ultimaConexion: '10:31 AM'),
     Maqueta(
-        nombre: 'centro de maquinados',
+        nombre: 'Centro de Maquinados',
         subtitulo: 'Sistema de Banda',
         ip: '192.168.4.2',
         ssid: 'ESP32_BANDA',
@@ -78,7 +77,7 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
         latencia: '18 ms',
         ultimaConexion: '10:30 AM'),
     Maqueta(
-        nombre: 'Robot 3 ejes',
+        nombre: 'Robot 3 Ejes',
         subtitulo: 'Brazo Robótico',
         ip: '192.168.4.3',
         ssid: 'ESP32_ROBOT',
@@ -87,7 +86,7 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
         latencia: '--',
         ultimaConexion: '--'),
     Maqueta(
-        nombre: 'centro de prensado',
+        nombre: 'Centro de Prensado',
         subtitulo: 'Sistema de Prensado',
         ip: '192.168.4.4',
         ssid: 'ESP32_PRENSA',
@@ -95,39 +94,42 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
         senal: 0,
         latencia: '--',
         ultimaConexion: '--'),
-    //Maqueta(nombre:'Horno Industrial', subtitulo:'Control de Temperatura',ip:'192.168.4.5', ssid:'ESP32_HORNO', estado:ConStatus.desconectado, senal: 0, latencia:'--', ultimaConexion:'--'),
   ];
 
-  // Función que detecta el clic y cambia el estado
   void _toggleEstado(Maqueta m) {
     setState(() {
       if (m.estado == ConStatus.conectado) {
         m.estado = ConStatus.desconectado;
-      } else {
-        m.estado = ConStatus.conectado;
+      } else if (m.estado == ConStatus.desconectado) {
+        m.estado = ConStatus.conectando;
+        // Simula un tiempo de conexión
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              m.estado = ConStatus.conectado;
+            });
+          }
+        });
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Cálculos dinámicos en tiempo real
     int total = _listaMaquetas.length;
     int conectados =
         _listaMaquetas.where((m) => m.estado == ConStatus.conectado).length;
-    int desconectados =
-        _listaMaquetas.where((m) => m.estado == ConStatus.desconectado).length;
+    int desconectados = total - conectados;
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             _buildHeader(),
             const SizedBox(height: 22),
-            _buildKpis(total, conectados,
-                desconectados), // Pasamos los valores calculados
+            _buildKpis(total, conectados, desconectados),
             const SizedBox(height: 26),
             _buildTableSection(),
           ]),
@@ -145,49 +147,40 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
           Text('Gestiona y conecta tus maquetas disponibles',
               style: TextStyle(fontSize: 13, color: kMuted2)),
         ]),
-        const Spacer(),
-
-        /*  ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(backgroundColor: kBlue,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-      icon: const Icon(Icons.sync, size: 16),
-      label: const Text('Escanear red', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-      onPressed: () {},
-    ),
- */
       ]);
 
-  Widget _buildKpis(int total, int conect, int desc) => Row(children: [
-        Expanded(
-            child: _KpiCard(
-                label: 'Maquetas detectadas',
-                value: '$total',
-                sub: 'dispositivos',
-                valueColor: kText)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _KpiCard(
-                label: 'Conectadas',
-                value: '$conect',
-                sub: '🟢 online',
-                valueColor: kGreen)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _KpiCard(
-                label: 'Desconectadas',
-                value: '$desc',
-                sub: 'offline',
-                valueColor: kRed)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _KpiCard(
-                label: 'Último escaneo',
-                value: '10:32 AM',
-                sub: '20/05/2025',
-                valueColor: kText,
-                smallValue: true)),
-      ]);
+  Widget _buildKpis(int total, int conect, int desc) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        // Vista para pantallas pequeñas (vertical)
+        return Column(
+          children: [
+            _KpiCard(label: 'Maquetas detectadas', value: '$total', sub: 'dispositivos', valueColor: kText),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _KpiCard(label: 'Conectadas', value: '$conect', sub: '🟢 online', valueColor: kGreen)),
+                const SizedBox(width: 12),
+                Expanded(child: _KpiCard(label: 'Desconectadas', value: '$desc', sub: 'offline', valueColor: kRed)),
+              ],
+            ),
+          ],
+        );
+      } else {
+        // Vista para pantallas grandes (horizontal)
+        return Row(children: [
+          Expanded(child: _KpiCard(label: 'Maquetas detectadas', value: '$total', sub: 'dispositivos', valueColor: kText)),
+          const SizedBox(width: 12),
+          Expanded(child: _KpiCard(label: 'Conectadas', value: '$conect', sub: '🟢 online', valueColor: kGreen)),
+          const SizedBox(width: 12),
+          Expanded(child: _KpiCard(label: 'Desconectadas', value: '$desc', sub: 'offline', valueColor: kRed)),
+          const SizedBox(width: 12),
+          Expanded(child: _KpiCard(label: 'Último escaneo', value: '10:32 AM', sub: '20/05/2025', valueColor: kText, smallValue: true)),
+        ]);
+      }
+    },
+  );
+
 
   Widget _buildTableSection() =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -201,18 +194,22 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: kBorder)),
           child: Column(children: [
-            _tableHeader(),
-            const Divider(height: 1, color: kBorder),
+            // El header solo se muestra en pantallas anchas
+             LayoutBuilder(builder: (context, constraints) {
+                if (constraints.maxWidth > 720) {
+                  return _tableHeader();
+                } else {
+                  return const SizedBox.shrink(); // No mostrar nada en pantallas pequeñas
+                }
+              }),
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _listaMaquetas.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: kBorder),
+              separatorBuilder: (_, __) => const Divider(height: 1, color: kBorder),
               itemBuilder: (_, i) => _MaquetaRow(
                 m: _listaMaquetas[i],
-                onAction: () => _toggleEstado(
-                    _listaMaquetas[i]), // Pasamos la función al botón
+                onAction: () => _toggleEstado(_listaMaquetas[i]),
               ),
             ),
           ]),
@@ -234,10 +231,10 @@ class _ConexionesScreenState extends State<ConexionesScreen> {
       );
 }
 
-// ─── Fila Maqueta ─────────────────────────────────────────────────────────────
+// ─── Fila Maqueta (AHORA RESPONSIVE) ──────────────────────────────────────────
 class _MaquetaRow extends StatefulWidget {
   final Maqueta m;
-  final VoidCallback onAction; // Variable para recibir la acción del clic
+  final VoidCallback onAction;
   const _MaquetaRow({required this.m, required this.onAction});
   @override
   State<_MaquetaRow> createState() => _MaquetaRowState();
@@ -245,107 +242,180 @@ class _MaquetaRow extends StatefulWidget {
 
 class _MaquetaRowState extends State<_MaquetaRow> {
   bool _hover = false;
+  
   @override
   Widget build(BuildContext context) {
-    final m = widget.m;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         color: _hover ? const Color(0xFF182336) : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(children: [
-          Expanded(
-              flex: 5,
-              child: Row(children: [
-                Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF1A2540),
-                        borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.memory_outlined,
-                        size: 18, color: kMuted2)),
-                const SizedBox(width: 10),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Usamos LayoutBuilder para decidir qué vista mostrar
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Define un punto de quiebre. Si la pantalla es muy estrecha, cambia la vista.
+            if (constraints.maxWidth < 720) {
+              return _buildNarrowLayout();
+            } else {
+              return _buildWideLayout();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  // == VISTA ANCHA (TABLA ORIGINAL) ==
+  Widget _buildWideLayout() {
+    final m = widget.m;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(children: [
+        Expanded(
+            flex: 5,
+            child: Row(children: [
+              Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF1A2540),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.memory_outlined,
+                      size: 18, color: kMuted2)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(m.nombre,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: kText)),
-                  // Text(m.subtitulo, style: const TextStyle(fontSize: 11, color: kMuted2)),
                 ]),
-              ])),
-          Expanded(
-              flex: 3,
-              child: Text(m.ip,
-                  style: const TextStyle(fontSize: 12, color: kMuted2))),
-          Expanded(
-              flex: 4,
-              child: Text(m.ssid,
-                  style: const TextStyle(fontSize: 12, color: kMuted2))),
-          Expanded(flex: 3, child: _StatusBadge(status: m.estado)),
-          Expanded(
-              flex: 3, child: _SignalWidget(dbm: m.senal, status: m.estado)),
-          Expanded(
-              flex: 2,
-              child: Text(m.latencia,
-                  style: const TextStyle(fontSize: 12, color: kMuted2))),
-          Expanded(
-              flex: 3,
-              child: Text(m.ultimaConexion,
-                  style: const TextStyle(fontSize: 12, color: kMuted2))),
+              ),
+            ])),
+        Expanded(
+            flex: 3,
+            child: Text(m.ip, style: const TextStyle(fontSize: 12, color: kMuted2))),
+        Expanded(
+            flex: 4,
+            child: Text(m.ssid, style: const TextStyle(fontSize: 12, color: kMuted2))),
+        Expanded(flex: 3, child: _StatusBadge(status: m.estado)),
+        Expanded(
+            flex: 3, child: _SignalWidget(dbm: m.senal, status: m.estado)),
+        Expanded(
+            flex: 2,
+            child: Text(m.latencia,
+                style: const TextStyle(fontSize: 12, color: kMuted2))),
+        Expanded(
+            flex: 3,
+            child: Text(m.ultimaConexion,
+                style: const TextStyle(fontSize: 12, color: kMuted2))),
+        Expanded(
+            flex: 3,
+            child: Center(child: _ActionButton(status: m.estado, onPressed: widget.onAction))),
+      ]),
+    );
+  }
 
-          // AQUÍ ELIMINAMOS LOS 3 PUNTOS Y ASIGNAMOS LA FUNCIÓN AL BOTÓN
-          Expanded(
-              flex: 3,
-              child: Center(
-                child: m.estado == ConStatus.conectado
-                    ? OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                            foregroundColor: kText,
-                            side: const BorderSide(color: kBorder),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6))),
-                        onPressed: widget
-                            .onAction, // Ejecuta la función de desconectar
-                        child: const Text('Desconectar',
-                            style: TextStyle(fontSize: 12)))
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: m.estado == ConStatus.conectando
-                                ? kYellow
-                                : kBlue,
-                            foregroundColor: m.estado == ConStatus.conectando
-                                ? Colors.black
-                                : Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6))),
-                        onPressed:
-                            widget.onAction, // Ejecuta la función de conectar
-                        child: Text(
-                            m.estado == ConStatus.conectando
-                                ? 'Conectando'
-                                : 'Conectar',
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w600))),
-              )),
-        ]),
+  // == VISTA ESTRECHA (NUEVO DISEÑO EN TARJETA) ==
+  Widget _buildNarrowLayout() {
+    final m = widget.m;
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+               Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF1A2540),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.memory_outlined,
+                      size: 18, color: kMuted2)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(m.nombre,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: kText)),
+              ),
+              const SizedBox(width: 12),
+              _ActionButton(status: m.estado, onPressed: widget.onAction),
+            ],
+          ),
+          const SizedBox(height: 16),
+           Padding(
+            padding: const EdgeInsets.only(left: 4.0),
+            child: _StatusBadge(status: m.estado),
+          ),
+          const Divider(height: 24, color: kBorder),
+          // Usamos Wrap para que los elementos se acomoden solos
+          Wrap(
+            spacing: 20.0, // Espacio horizontal entre elementos
+            runSpacing: 12.0, // Espacio vertical entre filas
+            children: [
+              _InfoChip(label: 'IP Local', value: m.ip),
+              _InfoChip(label: 'SSID / Red', value: m.ssid),
+              _InfoChip(label: 'Latencia', value: m.latencia),
+              _InfoChip(label: 'Última conexión', value: m.ultimaConexion),
+              // Ponemos el widget de señal en un chip también
+               Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   const _TH('Señal (RSSI)'),
+                   const SizedBox(height: 4),
+                  _SignalWidget(dbm: m.senal, status: m.estado),
+                 ],
+               ),
+            ],
+          )
+        ],
       ),
     );
   }
 }
 
-// ─── Widgets Auxiliares ───────────────────────────────────────────────────────
+// ─── Widgets Auxiliares ──────────────────────────────────────────────────
+
+class _ActionButton extends StatelessWidget {
+  final ConStatus status;
+  final VoidCallback onPressed;
+
+  const _ActionButton({required this.status, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == ConStatus.conectado) {
+      return OutlinedButton(
+          style: OutlinedButton.styleFrom(
+              foregroundColor: kText,
+              side: const BorderSide(color: kBorder),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          onPressed: onPressed,
+          child: const Text('Desconectar', style: TextStyle(fontSize: 12)));
+    } else {
+      return ElevatedButton(
+          style: ElevatedButton.styleFrom(
+              backgroundColor: status == ConStatus.conectando ? kYellow : kBlue,
+              foregroundColor: status == ConStatus.conectando ? Colors.black : Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          onPressed: status == ConStatus.conectando ? null : onPressed,
+          child: Text(status == ConStatus.conectando ? 'Conectando' : 'Conectar',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)));
+    }
+  }
+}
+
+
 class _StatusBadge extends StatelessWidget {
   final ConStatus status;
   const _StatusBadge({required this.status});
@@ -360,8 +430,11 @@ class _StatusBadge extends StatelessWidget {
       Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 5),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 4, spreadRadius: 1)]
+          ),
+      ),
+      const SizedBox(width: 6),
       Text(label,
           style: TextStyle(
               fontSize: 12, color: color, fontWeight: FontWeight.w500)),
@@ -375,27 +448,27 @@ class _SignalWidget extends StatelessWidget {
   const _SignalWidget({required this.dbm, required this.status});
   @override
   Widget build(BuildContext context) {
-    if (status == ConStatus.desconectado)
-      return const Text('-', style: TextStyle(fontSize: 12, color: kMuted2));
-    final bars = dbm > -50
-        ? 4
-        : dbm > -60
-            ? 3
-            : dbm > -70
-                ? 2
-                : 1;
+    if (status == ConStatus.desconectado) {
+      return const Text('--', style: TextStyle(fontSize: 12, color: kMuted2));
+    }
+    final bars = dbm >= -55 ? 4 : dbm >= -67 ? 3 : dbm >= -80 ? 2 : 1;
+    final color = dbm >= -67 ? kGreen : dbm >= -80 ? kYellow : kRed;
+
     return Row(children: [
-      Text('$dbm dBm', style: const TextStyle(fontSize: 11, color: kMuted2)),
-      const SizedBox(width: 4),
+      Text('$dbm dBm', style: TextStyle(fontSize: 11, color: color)),
+      const SizedBox(width: 5),
       Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: List.generate(
               4,
               (i) => Container(
-                    width: 3,
-                    height: 4.0 + i * 3,
-                    margin: const EdgeInsets.only(right: 1),
-                    color: i < bars ? kBlue : kMuted,
+                    width: 3.5,
+                    height: 4.0 + i * 2.5,
+                    margin: const EdgeInsets.only(right: 1.5),
+                    decoration: BoxDecoration(
+                      color: i < bars ? color : kMuted.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
                   ))),
     ]);
   }
@@ -413,7 +486,7 @@ class _KpiCard extends StatelessWidget {
       this.smallValue = false});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
             color: kCard,
             borderRadius: BorderRadius.circular(12),
@@ -423,7 +496,7 @@ class _KpiCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(value,
               style: TextStyle(
-                  fontSize: smallValue ? 22 : 32,
+                  fontSize: smallValue ? 20 : 28,
                   fontWeight: FontWeight.bold,
                   color: valueColor)),
           const SizedBox(height: 4),
@@ -441,4 +514,23 @@ class _TH extends StatelessWidget {
       textAlign: center ? TextAlign.center : TextAlign.left,
       style: const TextStyle(
           fontSize: 12, fontWeight: FontWeight.w600, color: kMuted2));
+}
+
+// Widget para mostrar info en la vista estrecha
+class _InfoChip extends StatelessWidget {
+  final String label;
+  final String value;
+  const _InfoChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _TH(label), // Reutilizamos el estilo del header
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 12, color: kMuted2)),
+      ],
+    );
+  }
 }

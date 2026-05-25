@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'genrarPDF.dart';
+import 'package:intl/intl.dart';
+import 'generar_reporte.dart';
 
 void main() {
   runApp(const AnalyticsApp());
@@ -97,7 +99,7 @@ class StationAnalyticsData {
 }
 
 class DashboardData {
-  static const List<String> fechas = [
+  static const List<String> fechasOriginales = [
     '14/05',
     '15/05',
     '16/05',
@@ -108,7 +110,6 @@ class DashboardData {
   ];
 
   static final List<StationAnalyticsData> stations = [
-    // 0: General
     const StationAnalyticsData(
       name: 'General',
       produccionTotal: '12,540',
@@ -126,78 +127,6 @@ class DashboardData {
         _PieSection('Sensor', 15, AppColors.red),
       ],
     ),
-    // 1: Neumático
-    const StationAnalyticsData(
-      name: 'Neumático',
-      produccionTotal: '3,120',
-      tiempoActivoPorcentaje: '92.1%',
-      fallasTotales: '5',
-      consumoTotal: '310',
-      produccion: [250, 300, 450, 550, 600, 580, 720],
-      tiempoActivo: [90, 88, 95, 91, 93, 89, 94],
-      fallas: [1, 2, 0, 1, 0, 1, 0],
-      consumo: [120, 110, 130, 125, 135, 115, 140],
-      pieData: [
-        _PieSection('Válvula', 50, AppColors.blue),
-        _PieSection('Cilindro', 30, AppColors.yellow),
-        _PieSection('Manguera', 15, AppColors.green),
-        _PieSection('Sensor', 5, AppColors.red),
-      ],
-    ),
-    // 2: Maquinados
-    const StationAnalyticsData(
-      name: 'Maquinados',
-      produccionTotal: '2,890',
-      tiempoActivoPorcentaje: '85.3%',
-      fallasTotales: '8',
-      consumoTotal: '450',
-      produccion: [200, 280, 400, 500, 650, 550, 680],
-      tiempoActivo: [80, 82, 88, 79, 85, 81, 87],
-      fallas: [2, 1, 3, 0, 1, 1, 0],
-      consumo: [180, 170, 200, 190, 210, 180, 220],
-      pieData: [
-        _PieSection('Motor', 60, AppColors.blue),
-        _PieSection('Banda', 20, AppColors.yellow),
-        _PieSection('CNC', 15, AppColors.green),
-        _PieSection('Eléctrico', 5, AppColors.red),
-      ],
-    ),
-    // 3: Robot
-    const StationAnalyticsData(
-      name: 'Robot 3 Ejes',
-      produccionTotal: '3,510',
-      tiempoActivoPorcentaje: '95.8%',
-      fallasTotales: '3',
-      consumoTotal: '280',
-      produccion: [300, 350, 500, 600, 700, 650, 810],
-      tiempoActivo: [95, 96, 94, 97, 98, 93, 99],
-      fallas: [0, 0, 1, 0, 1, 0, 1],
-      consumo: [100, 105, 110, 115, 120, 100, 125],
-      pieData: [
-        _PieSection('Gripper', 40, AppColors.blue),
-        _PieSection('Eje Z', 30, AppColors.yellow),
-        _PieSection('Eje X/Y', 20, AppColors.green),
-        _PieSection('Firmware', 10, AppColors.red),
-      ],
-    ),
-    // 4: Prensado
-    const StationAnalyticsData(
-      name: 'Prensado',
-      produccionTotal: '3,020',
-      tiempoActivoPorcentaje: '82.0%',
-      fallasTotales: '8',
-      consumoTotal: '205',
-      produccion: [250, 270, 450, 550, 650, 600, 700],
-      tiempoActivo: [78, 80, 85, 75, 88, 79, 83],
-      fallas: [2, 3, 0, 1, 1, 1, 0],
-      consumo: [80, 75, 90, 85, 95, 80, 100],
-      pieData: [
-        _PieSection('Hidráulico', 55, AppColors.blue),
-        _PieSection('Molde', 25, AppColors.yellow),
-        _PieSection('Eléctrico', 15, AppColors.green),
-        _PieSection('Otros', 5, AppColors.red),
-      ],
-    ),
   ];
 }
 
@@ -210,6 +139,10 @@ class AnalyticsDashboard extends StatefulWidget {
 
 class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
   int _selectedSectionIndex = 0;
+  late StationAnalyticsData _currentDisplayData;
+  late DateTimeRange _selectedDateRange;
+  List<String> _dateLabels = [];
+
   final List<String> _sections = [
     'General',
     'Neumático',
@@ -218,17 +151,65 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
     'Prensado'
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDateRange = DateTimeRange(start: now.subtract(const Duration(days: 6)), end: now);
+    _updateDashboardData();
+  }
+
   void _onSectionSelected(int index) {
     setState(() {
       _selectedSectionIndex = index;
+      _updateDashboardData();
     });
   }
 
+  Future<void> _pickDateRange() async {
+    final newDateRange = await showDialog<DateTimeRange>(
+      context: context,
+      builder: (context) => _CustomDateRangeDialog(initialDateRange: _selectedDateRange),
+    );
+
+    if (newDateRange != null) {
+      setState(() {
+        _selectedDateRange = newDateRange;
+        _updateDashboardData();
+      });
+    }
+  }
+
+  void _updateDashboardData() {
+    final random = Random();
+    final originalData = DashboardData.stations[0]; // Simplified for this example
+    final days = _selectedDateRange.duration.inDays + 1;
+    if (days <= 0) return;
+
+    setState(() {
+      _currentDisplayData = StationAnalyticsData(
+        name: originalData.name,
+        produccionTotal: NumberFormat('#,###').format(random.nextInt(5000) + (days * 500)),
+        tiempoActivoPorcentaje: '${(random.nextDouble() * 15 + 80).toStringAsFixed(1)}%',
+        fallasTotales: (random.nextInt(5) + (days / 2).floor()).toString(),
+        consumoTotal: NumberFormat('#,###').format(random.nextInt(800) + (days * 100)),
+        produccion: List.generate(days, (_) => random.nextDouble() * 3000 + 500),
+        tiempoActivo: List.generate(days, (_) => random.nextDouble() * 20 + 78),
+        fallas: List.generate(days, (_) => random.nextDouble() * 3),
+        consumo: List.generate(days, (_) => random.nextDouble() * 500 + 100),
+        pieData: originalData.pieData.map((e) => _PieSection(e.label, random.nextDouble() * 100, e.color)).toList(),
+      );
+
+      _dateLabels = List.generate(days, (i) {
+        final date = _selectedDateRange.start.add(Duration(days: i));
+        return DateFormat('dd/MM').format(date);
+      });
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final StationAnalyticsData currentData =
-        DashboardData.stations[_selectedSectionIndex];
-
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: LayoutBuilder(
@@ -242,7 +223,12 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _DashboardHeader(r: r),
+                _DashboardHeader(
+                  r: r,
+                  onDateTap: _pickDateRange,
+                  selectedDateRange: _selectedDateRange,
+                  maqueta: _sections[_selectedSectionIndex], 
+                ),
                 SizedBox(height: r.scale(24)),
                 _SectionTabs(
                   r: r,
@@ -251,15 +237,15 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
                   onSelected: _onSectionSelected,
                 ),
                 SizedBox(height: r.scale(24)),
-                _KPIRow(r: r, data: currentData),
+                _KPIRow(r: r, data: _currentDisplayData),
                 SizedBox(height: r.scale(28)),
                 _SectionLabel(
-                    label: 'Resumen de ${_sections[_selectedSectionIndex]}',
+                    label: 'Resumen de ${_sections[_selectedSectionIndex]} en el período seleccionado',
                     r: r),
                 SizedBox(height: r.scale(16)),
-                _TopChartsRow(r: r, data: currentData),
+                _TopChartsRow(r: r, data: _currentDisplayData, dateLabels: _dateLabels),
                 SizedBox(height: r.scale(20)),
-                _BottomChartsRow(r: r, data: currentData),
+                _BottomChartsRow(r: r, data: _currentDisplayData, dateLabels: _dateLabels),
                 SizedBox(height: r.scale(24)),
               ],
             ),
@@ -272,10 +258,25 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
 
 class _DashboardHeader extends StatelessWidget {
   final R r;
-  const _DashboardHeader({required this.r});
+  final VoidCallback onDateTap;
+  final DateTimeRange selectedDateRange;
+  final String maqueta;
+
+  const _DashboardHeader({
+    required this.r,
+    required this.onDateTap,
+    required this.selectedDateRange,
+    required this.maqueta,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final generateReportButton = _GenerateReportButton(
+      r: r,
+      maqueta: maqueta,
+      dateRange: selectedDateRange,
+    );
+
     if (r.isSmall) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,9 +285,9 @@ class _DashboardHeader extends StatelessWidget {
           SizedBox(height: r.scale(12)),
           Row(
             children: [
-              Flexible(child: _DateRangePicker(r: r)),
+              Flexible(child: _DateRangePicker(r: r, onTap: onDateTap, dateRange: selectedDateRange)),
               SizedBox(width: r.scale(10)),
-              _GenerateReportButton(r: r),
+              generateReportButton,
             ],
           ),
         ],
@@ -302,9 +303,9 @@ class _DashboardHeader extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _DateRangePicker(r: r),
+            _DateRangePicker(r: r, onTap: onDateTap, dateRange: selectedDateRange),
             SizedBox(width: r.scale(12)),
-            _GenerateReportButton(r: r),
+            generateReportButton,
           ],
         ),
       ],
@@ -322,7 +323,7 @@ class _TitleBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Análisis',
+          'Análisis de Planta',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: r.scale(22),
@@ -345,42 +346,195 @@ class _TitleBlock extends StatelessWidget {
 
 class _DateRangePicker extends StatelessWidget {
   final R r;
-  const _DateRangePicker({required this.r});
+  final VoidCallback onTap;
+  final DateTimeRange dateRange;
+
+  const _DateRangePicker({required this.r, required this.onTap, required this.dateRange});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: r.scale(14),
-        vertical: r.scale(10),
+    final formatter = DateFormat('dd/MM/yyyy');
+    final dateString = '${formatter.format(dateRange.start)} - ${formatter.format(dateRange.end)}';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: r.scale(14),
+          vertical: r.scale(10),
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              dateString,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: r.scale(12),
+              ),
+            ),
+            SizedBox(width: r.scale(8)),
+            Icon(Icons.calendar_today_outlined,
+                color: AppColors.textMuted, size: r.scale(14)),
+          ],
+        ),
       ),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+    );
+  }
+}
+
+class _CustomDateRangeDialog extends StatefulWidget {
+  final DateTimeRange initialDateRange;
+  const _CustomDateRangeDialog({required this.initialDateRange});
+
+  @override
+  State<_CustomDateRangeDialog> createState() => _CustomDateRangeDialogState();
+}
+
+class _CustomDateRangeDialogState extends State<_CustomDateRangeDialog> {
+  late DateTime _startDate;
+  late DateTime _endDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDate = widget.initialDateRange.start;
+    _endDate = widget.initialDateRange.end;
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: isStart ? _startDate : _endDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.blue,
+              onPrimary: Colors.white,
+              surface: AppColors.card,
+              onSurface: AppColors.textPrimary,
+            ),
+            dialogBackgroundColor: AppColors.bg,
+             buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        if (isStart) {
+          _startDate = pickedDate;
+          if (_startDate.isAfter(_endDate)) {
+            _endDate = _startDate;
+          }
+        } else {
+          _endDate = pickedDate;
+          if (_endDate.isBefore(_startDate)) {
+            _startDate = _endDate;
+          }
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formatter = DateFormat('dd/MM/yyyy');
+    final r = R(MediaQuery.of(context).size.width);
+
+    return Dialog(
+      backgroundColor: AppColors.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Select range', style: TextStyle(fontSize: r.scale(16), fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: _buildDateField('Start Date', formatter.format(_startDate), () => _selectDate(context, true), r)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDateField('End Date', formatter.format(_endDate), () => _selectDate(context, false), r)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(DateTimeRange(start: _startDate, end: _endDate));
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white),
+                    child: const Text('OK'),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '01/05/2025 - 20/05/2025',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: r.scale(12),
+    );
+  }
+
+  Widget _buildDateField(String label, String date, VoidCallback onTap, R r) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: r.scale(11))),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: r.scale(12), vertical: r.scale(10)),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(date, style: TextStyle(color: AppColors.textPrimary, fontSize: r.scale(13))),
+                Icon(Icons.calendar_month_outlined, color: AppColors.textMuted, size: r.scale(16)),
+              ],
             ),
           ),
-          SizedBox(width: r.scale(8)),
-          Icon(Icons.calendar_today_outlined,
-              color: AppColors.textMuted, size: r.scale(14)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 class _GenerateReportButton extends StatelessWidget {
   final R r;
-  const _GenerateReportButton({required this.r});
+  final String maqueta;
+  final DateTimeRange dateRange;
+
+  const _GenerateReportButton({
+    required this.r,
+    required this.maqueta,
+    required this.dateRange,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -390,7 +544,10 @@ class _GenerateReportButton extends StatelessWidget {
           context: context,
           barrierDismissible: true,
           barrierColor: Colors.black.withOpacity(0.7),
-          builder: (_) => const GenerarReporteDialog(),
+          builder: (_) => GenerarReporteDialog(
+            maqueta: maqueta,
+            dateRange: dateRange,
+          ),
         );
       },
       icon: Icon(Icons.download_rounded, size: r.scale(15)),
@@ -519,7 +676,7 @@ class _KPIRow extends StatelessWidget {
           'Tiempo Activo',
           'Disponibilidad',
           data.tiempoActivoPorcentaje,
-          '',
+          '%',
           Icons.access_time_rounded,
           AppColors.green,
           AppColors.green.withOpacity(0.15)),
@@ -682,7 +839,8 @@ class _KPICard extends StatelessWidget {
 class _TopChartsRow extends StatelessWidget {
   final R r;
   final StationAnalyticsData data;
-  const _TopChartsRow({required this.r, required this.data});
+  final List<String> dateLabels;
+  const _TopChartsRow({required this.r, required this.data, required this.dateLabels});
 
   static List<FlSpot> _spotsFrom(List<double> values) =>
       List.generate(values.length, (i) => FlSpot(i.toDouble(), values[i]));
@@ -690,7 +848,7 @@ class _TopChartsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final charts = [
-      _BarChartCard(r: r, data: data.produccion),
+      _BarChartCard(r: r, data: data.produccion, dateLabels: dateLabels),
       _LineChartCard(
         r: r,
         title: 'Tiempo activo (%)',
@@ -698,6 +856,7 @@ class _TopChartsRow extends StatelessWidget {
         spots: _spotsFrom(data.tiempoActivo),
         maxY: 100,
         interval: 25,
+        dateLabels: dateLabels,
       ),
       _LineChartCard(
         r: r,
@@ -706,6 +865,7 @@ class _TopChartsRow extends StatelessWidget {
         spots: _spotsFrom(data.fallas),
         maxY: 15,
         interval: 5,
+        dateLabels: dateLabels,
       ),
     ];
 
@@ -756,7 +916,8 @@ class _TopChartsRow extends StatelessWidget {
 class _BarChartCard extends StatelessWidget {
   final R r;
   final List<double> data;
-  const _BarChartCard({required this.r, required this.data});
+  final List<String> dateLabels;
+  const _BarChartCard({required this.r, required this.data, required this.dateLabels});
 
   @override
   Widget build(BuildContext context) {
@@ -770,7 +931,7 @@ class _BarChartCard extends StatelessWidget {
         child: BarChart(
           BarChartData(
             backgroundColor: Colors.transparent,
-            maxY: 3500,
+            maxY: data.isEmpty ? 1000 : (data.reduce(max) * 1.2),
             barGroups: List.generate(
               data.length,
               (i) => BarChartGroupData(
@@ -780,8 +941,7 @@ class _BarChartCard extends StatelessWidget {
                     toY: data[i],
                     color: AppColors.blue,
                     width: barWidth,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(4)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                   ),
                 ],
               ),
@@ -789,24 +949,22 @@ class _BarChartCard extends StatelessWidget {
             gridData: FlGridData(
               show: true,
               drawVerticalLine: false,
-              horizontalInterval: 1000,
+              horizontalInterval: data.isEmpty ? 250 : (data.reduce(max) * 1.2) / 4,
               getDrawingHorizontalLine: (_) =>
                   const FlLine(color: Color(0xFF1F2937), strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: r.scale(38),
-                  interval: 1000,
                   getTitlesWidget: (v, _) => Text(
                     v.toInt() == 0
                         ? '0'
-                        : '${(v / 1000).toStringAsFixed(0)},000',
+                        : '${(v / 1000).toStringAsFixed(0)}k',
                     style: TextStyle(
                         color: AppColors.textMuted, fontSize: r.scale(8)),
                   ),
@@ -818,13 +976,13 @@ class _BarChartCard extends StatelessWidget {
                   reservedSize: r.scale(22),
                   getTitlesWidget: (v, _) {
                     final idx = v.toInt();
-                    if (idx < 0 || idx >= DashboardData.fechas.length) {
+                    if (idx < 0 || idx >= dateLabels.length) {
                       return const SizedBox.shrink();
                     }
                     return Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        DashboardData.fechas[idx],
+                        dateLabels[idx],
                         style: TextStyle(
                             color: AppColors.textMuted, fontSize: r.scale(8)),
                       ),
@@ -847,6 +1005,7 @@ class _LineChartCard extends StatelessWidget {
   final List<FlSpot> spots;
   final double maxY;
   final double interval;
+  final List<String> dateLabels;
 
   const _LineChartCard({
     required this.r,
@@ -855,6 +1014,7 @@ class _LineChartCard extends StatelessWidget {
     required this.spots,
     required this.maxY,
     required this.interval,
+    required this.dateLabels,
   });
 
   @override
@@ -879,8 +1039,7 @@ class _LineChartCard extends StatelessWidget {
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -899,13 +1058,13 @@ class _LineChartCard extends StatelessWidget {
                   reservedSize: r.scale(22),
                   getTitlesWidget: (v, _) {
                     final idx = v.toInt();
-                    if (idx < 0 || idx >= DashboardData.fechas.length) {
+                    if (idx < 0 || idx >= dateLabels.length) {
                       return const SizedBox.shrink();
                     }
                     return Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        DashboardData.fechas[idx],
+                        dateLabels[idx],
                         style: TextStyle(
                             color: AppColors.textMuted, fontSize: r.scale(8)),
                       ),
@@ -946,7 +1105,8 @@ class _LineChartCard extends StatelessWidget {
 class _BottomChartsRow extends StatelessWidget {
   final R r;
   final StationAnalyticsData data;
-  const _BottomChartsRow({required this.r, required this.data});
+  final List<String> dateLabels;
+  const _BottomChartsRow({required this.r, required this.data, required this.dateLabels});
 
   @override
   Widget build(BuildContext context) {
@@ -957,8 +1117,9 @@ class _BottomChartsRow extends StatelessWidget {
       color: AppColors.yellow,
       spots: List.generate(
           data.consumo.length, (i) => FlSpot(i.toDouble(), data.consumo[i])),
-      maxY: 750,
-      interval: 250,
+      maxY: data.consumo.isEmpty ? 500 : data.consumo.reduce(max) * 1.2,
+      interval: data.consumo.isEmpty ? 100 : (data.consumo.reduce(max) * 1.2) / 4,
+      dateLabels: dateLabels,
     );
 
     if (r.isSmall) {
@@ -1025,16 +1186,26 @@ class _PieChartCard extends StatelessWidget {
   }
 
   PieChart _buildPie(double radius) {
+    double totalValue = sections.fold(0, (sum, item) => sum + item.value);
     return PieChart(
       PieChartData(
-        sections: sections
-            .map((s) => PieChartSectionData(
-                  value: s.value,
-                  color: s.color,
+        sections: totalValue == 0
+            ? [
+                PieChartSectionData(
+                  value: 1,
+                  color: AppColors.textMuted,
                   title: '',
                   radius: radius,
-                ))
-            .toList(),
+                )
+              ]
+            : sections
+                .map((s) => PieChartSectionData(
+                      value: s.value,
+                      color: s.color,
+                      title: '',
+                      radius: radius,
+                    ))
+                .toList(),
         sectionsSpace: 2,
         centerSpaceRadius: 0,
       ),
@@ -1042,23 +1213,29 @@ class _PieChartCard extends StatelessWidget {
   }
 
   Widget _buildLegendColumn() {
+    double totalValue = sections.fold(0, (sum, item) => sum + item.value);
+    if (totalValue == 0) return const Center(child: Text('No hay datos de fallas', style: TextStyle(color: AppColors.textMuted)));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: sections
           .map((s) => Padding(
                 padding: EdgeInsets.only(bottom: r.scale(12)),
-                child: _LegendItem(section: s, r: r),
+                child: _LegendItem(section: s, total: totalValue, r: r),
               ))
           .toList(),
     );
   }
 
   Widget _buildLegendRow() {
+     double totalValue = sections.fold(0, (sum, item) => sum + item.value);
+    if (totalValue == 0) return const Center(child: Text('No hay datos de fallas', style: TextStyle(color: AppColors.textMuted)));
+
     return Wrap(
       spacing: r.scale(12),
       runSpacing: r.scale(8),
-      children: sections.map((s) => _LegendItem(section: s, r: r)).toList(),
+      children: sections.map((s) => _LegendItem(section: s, total: totalValue, r: r)).toList(),
     );
   }
 }
@@ -1072,19 +1249,20 @@ class _PieSection {
 
 class _LegendItem extends StatelessWidget {
   final _PieSection section;
+  final double total;
   final R r;
-  const _LegendItem({required this.section, required this.r});
+  const _LegendItem({required this.section, required this.total, required this.r});
 
   @override
   Widget build(BuildContext context) {
+    final percentage = (section.value / total) * 100;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: r.scale(11),
           height: r.scale(11),
-          decoration:
-              BoxDecoration(color: section.color, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: section.color, shape: BoxShape.circle),
         ),
         SizedBox(width: r.scale(6)),
         Text(
@@ -1093,7 +1271,7 @@ class _LegendItem extends StatelessWidget {
         ),
         SizedBox(width: r.scale(8)),
         Text(
-          '${section.value.toInt()}%',
+          '${percentage.toStringAsFixed(1)}%',
           style: TextStyle(color: AppColors.textMuted, fontSize: r.scale(12)),
         ),
       ],

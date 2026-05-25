@@ -1,27 +1,18 @@
-
-// ============================================================
-// CENTRO DE PRENSADO SCADA 4.0 -- Flutter
-// Art. No. TMPUM24-A -- Punching Machine 24V
-// Sensores: P1, P2, S1, S2
-// Actuadores: RLY01 (M1-Home), RLY02 (M1-Work),
-//             RLY03 (M2-Fwd),  RLY04 (M2-Bwd)
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// ── Paleta ────────────────────────────────────────────────────────────────
+// ── Paleta Unificada (Basada en Neumático) ──────────────────────────────────
 const Color _kBg = Color(0xFF081014);
 const Color _kPanel = Color(0xFF11222C);
-const Color _kCyan = Color(0xFF00EAFF);
+const Color _kMachine = Color(0xFF00EAFF); // Color principal de acento (antes _kOrange)
 const Color _kGreen = Color(0xFF00FF88);
 const Color _kRed = Color(0xFFFF3366);
 const Color _kBorder = Color(0xFF1A3644);
 const Color _kText = Color(0xFFC5D1D8);
 const Color _kAudit = Color(0xFFFFAA00);
 const Color _kDark = Color(0xFF0C1820);
-const Color _kOrange = Color(0xFFFFAA00); // color característico de prensado
+
 
 // ── Estados del ciclo (fiel al proceso real TMPUM24-A) ────────────────────
 const List<String> _kEstados = [
@@ -320,7 +311,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: _kCyan)))
+                child: const Text('OK', style: TextStyle(color: _kMachine)))
           ],
         ),
       );
@@ -374,7 +365,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.only(bottom: 10),
         decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: _kOrange, width: 2))),
+            border: Border(bottom: BorderSide(color: _kMachine, width: 2))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -383,7 +374,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               children: [
                 Text('CENTRO DE PRENSADO',
                     style: TextStyle(
-                        color: _kOrange,
+                        color: _kMachine,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4)),
@@ -427,7 +418,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _kOrange,
+                backgroundColor: _kGreen,
                 foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
@@ -453,7 +444,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               label: const Text('RESTABLECER',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _kCyan,
+                backgroundColor: _kMachine,
                 foregroundColor: Colors.black,
                 disabledBackgroundColor: const Color(0xFF333333),
                 disabledForegroundColor: const Color(0xFF666666),
@@ -483,7 +474,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           ],
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _mode == 'auto' ? _kOrange : Colors.grey,
+            color: _mode == 'auto' ? _kMachine : Colors.grey,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -493,15 +484,15 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(color: _mode == 'auto' ? _kOrange : _kBorder),
+              borderSide: BorderSide(color: _mode == 'auto' ? _kMachine : _kBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(color: _mode == 'auto' ? _kOrange : _kBorder),
+              borderSide: BorderSide(color: _mode == 'auto' ? _kMachine : _kBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: _kOrange, width: 2),
+              borderSide: const BorderSide(color: _kMachine, width: 2),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
@@ -522,16 +513,16 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: _kBg,
-            border: Border.all(color: _kOrange),
+            border: Border.all(color: _kMachine),
             borderRadius: BorderRadius.circular(4),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: val,
               dropdownColor: _kPanel,
-              style: const TextStyle(color: _kOrange, fontSize: 12),
+              style: const TextStyle(color: _kMachine, fontSize: 12),
               icon:
-                  const Icon(Icons.arrow_drop_down, color: _kOrange, size: 18),
+                  const Icon(Icons.arrow_drop_down, color: _kMachine, size: 18),
               isDense: true,
               items: items.entries
                   .map((e) =>
@@ -546,8 +537,8 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
   Widget _kpiBox(String label, String value) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: _kOrange.withOpacity(0.1),
-          border: Border.all(color: _kOrange),
+          color: _kGreen.withOpacity(0.1),
+          border: Border.all(color: _kGreen),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -555,7 +546,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
           const SizedBox(height: 2),
           Text(value,
               style: const TextStyle(
-                  color: _kOrange, fontSize: 24, fontWeight: FontWeight.bold)),
+                  color: _kGreen, fontSize: 24, fontWeight: FontWeight.bold)),
         ]),
       );
 
@@ -572,7 +563,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         height: 320,
         decoration: BoxDecoration(
           color: _kDark,
-          border: Border.all(color: _kOrange),
+          border: Border.all(color: _kMachine),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Stack(children: [
@@ -581,7 +572,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             right: 10,
             child: Text('Gemelo Digital 2D — TMPUM24-A',
                 style: TextStyle(
-                    color: _kOrange,
+                    color: _kMachine,
                     fontWeight: FontWeight.bold,
                     fontSize: 12)),
           ),
@@ -592,7 +583,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             child: _dtRect(
               'M2\nBanda\nTransportadora',
               _act('RLY03').on || _act('RLY04').on,
-              _act('RLY04').on ? _kAudit : _kCyan,
+              _act('RLY04').on ? _kAudit : _kMachine,
               w: 280,
               h: 40,
             ),
@@ -605,7 +596,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               child: Text(
                 _act('RLY03').on ? '→ Forward' : '← Backward',
                 style: TextStyle(
-                  color: _act('RLY03').on ? _kCyan : _kAudit,
+                  color: _act('RLY03').on ? _kMachine : _kAudit,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -636,7 +627,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
                 borderRadius: BorderRadius.circular(3),
               ),
               child: const Center(
-                child: Text('GUÍA\nPUNZÓN',
+                child: Text('GUÍA\nPUNZÓN', //... (rest of the code is the same)
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xFF446644), fontSize: 8)),
               ),
@@ -655,7 +646,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             child: _dtRect(
               'M1\nPunzón',
               _act('RLY01').on || _act('RLY02').on,
-              _act('RLY02').on ? _kOrange : _kGreen,
+              _act('RLY02').on ? _kMachine : _kGreen,
               w: 70,
               h: 55,
             ),
@@ -678,7 +669,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               _sensorDot('S2', _sensor('S2').active),
               const SizedBox(height: 2),
               const Text('WORK',
-                  style: TextStyle(color: _kOrange, fontSize: 8)),
+                  style: TextStyle(color: _kMachine, fontSize: 8)),
             ]),
           ),
 
@@ -755,16 +746,16 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
             height: 10,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: active ? _kOrange : const Color(0xFF334455),
+              color: active ? _kMachine : const Color(0xFF334455),
               boxShadow: active
-                  ? [BoxShadow(color: _kOrange.withOpacity(0.7), blurRadius: 6)]
+                  ? [BoxShadow(color: _kMachine.withOpacity(0.7), blurRadius: 6)]
                   : null,
             ),
           ),
           const SizedBox(width: 5),
           Text('$id $desc',
               style: TextStyle(
-                color: active ? _kOrange : const Color(0xFF546E7A),
+                color: active ? _kMachine : const Color(0xFF546E7A),
                 fontSize: 9,
                 fontWeight: active ? FontWeight.bold : FontWeight.normal,
               )),
@@ -894,9 +885,9 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color:
-              a.on ? _kOrange.withOpacity(0.08) : Colors.black.withOpacity(0.3),
+              a.on ? _kMachine.withOpacity(0.08) : Colors.black.withOpacity(0.3),
           border:
-              Border.all(color: a.on ? _kOrange.withOpacity(0.5) : _kBorder),
+              Border.all(color: a.on ? _kMachine.withOpacity(0.5) : _kBorder),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(children: [
@@ -906,7 +897,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               children: [
                 Text(a.id,
                     style: TextStyle(
-                        color: a.on ? _kOrange : _kText,
+                        color: a.on ? _kMachine : _kText,
                         fontSize: 13,
                         fontWeight: FontWeight.bold)),
                 Text(a.description,
@@ -921,7 +912,7 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
               value: a.on,
               onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
               activeColor: Colors.white,
-              activeTrackColor: _kOrange,
+              activeTrackColor: _kMachine,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: const Color(0xFF333333),
             ),
@@ -929,11 +920,11 @@ class _ScadaPrensadoState extends State<ScadaPrensadoScreen> {
         ]),
       );
 
-  Widget _panel({
+  Widget _panel({ 
     required String title,
     required Widget child,
     double? height,
-    Color titleColor = _kOrange,
+    Color titleColor = _kMachine, // Usar color principal por defecto
   }) =>
       Container(
         height: height,
