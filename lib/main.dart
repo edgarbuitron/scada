@@ -1,10 +1,10 @@
-
-// ============================================================
-//  HITECH INGENIUM  ·  SCADA MASTER  ·  main.dart
-//  Layout responsivo + nuevas secciones del menú lateral
-// ============================================================
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'login.dart'; 
+
+// --- Firebase Imports ---
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 // ── Importaciones de los módulos del sistema ──────────────────────────────────
 import 'nube.dart' show CloudSyncDashboard;
@@ -18,10 +18,13 @@ import 'main_robot_3_ejes.dart' show ScadaRobotDashboard;
 import 'main_maquinados.dart' show ScadaMaquinadosDashboard;
 import 'main_prensado.dart' show ScadaPrensadoScreen;
 
-
-
-
-void main() => runApp(const MyApp());
+void main() async { 
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
+}
 
 // ── Paleta ────────────────────────────────────────────────────────────────────
 const Color kBgDark = Color(0xFF0F172A);
@@ -56,7 +59,11 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'SCADA 4.0 · Hitech INGENIUM',
         theme: ThemeData.dark().copyWith(scaffoldBackgroundColor: kBgDark),
-        home: const ScadaMasterHome(),
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/home': (context) => const ScadaMasterHome(),
+        },
       );
 }
 
@@ -195,7 +202,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
     if (ql.contains('conexion') || ql.contains('red'))
       return 'Módulo Conexiones: gestiona y monitorea las maquetas disponibles en la red.';
     if (ql.contains('diagnostico'))
-        return 'Diagnóstico de Conexiones: visualiza el flujo y estado de la red en tiempo real.';
+      return 'Diagnóstico de Conexiones: visualiza el flujo y estado de la red en tiempo real.';
     if (ql.contains('historial') || ql.contains('log'))
       return 'Historial de Eventos: consulta y filtra todos los eventos del sistema.';
     if (ql.contains('analytic') || ql.contains('reporte'))
@@ -229,10 +236,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
       case AppView.conexiones:
         return 'Conexiones de Red';
 
-         case AppView.diagnostico_conexiones:
+      case AppView.diagnostico_conexiones:
         return 'flujo de Red';
-
-
 
       case AppView.historial:
         return 'Historial de Eventos';
@@ -262,28 +267,28 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
             ),
       body: SafeArea(
         child: Row(children: [
-            if (showSidebar)
-              Container(
-                width: layout == _Layout.tablet ? 200 : 248,
-                decoration: const BoxDecoration(
-                  color: kSidebar,
-                  border: Border(right: BorderSide(color: kBorder)),
-                ),
-                child: _sidebarContent(layout),
+          if (showSidebar)
+            Container(
+              width: layout == _Layout.tablet ? 200 : 248,
+              decoration: const BoxDecoration(
+                color: kSidebar,
+                border: Border(right: BorderSide(color: kBorder)),
               ),
-            Expanded(
-              child: Column(children: [
-                //_topBar(layout),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child:
-                        KeyedSubtree(key: ValueKey(_view), child: _buildView()),
-                  ),
-                ),
-              ]),
+              child: _sidebarContent(layout),
             ),
-          ]),
+          Expanded(
+            child: Column(children: [
+              //_topBar(layout),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child:
+                      KeyedSubtree(key: ValueKey(_view), child: _buildView()),
+                ),
+              ),
+            ]),
+          ),
+        ]),
       ),
     );
   }
@@ -332,7 +337,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         // ── Sección: Herramientas del sistema ──
         _sectionLabel('SISTEMA', compact),
         _navTile('🔌', 'Conexiones', AppView.conexiones, kTeal, compact),
-         _navTile('💻', 'diagnostico_Conexiones', AppView.diagnostico_conexiones, const Color.fromARGB(255, 58, 145, 226), compact),
+        _navTile('💻', 'diagnostico_Conexiones',
+            AppView.diagnostico_conexiones, const Color.fromARGB(255, 58, 145, 226), compact),
 
         _navTile('📋', 'Historial / Logs', AppView.historial, kOrange, compact),
         _navTile('👥', 'Usuarios', AppView.usuarios, kPink, compact),
@@ -360,8 +366,8 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
       decoration: BoxDecoration(
         color: active ? col.withOpacity(0.12) : Colors.transparent,
         border: Border(
-            left:
-                BorderSide(color: active ? col : Colors.transparent, width: 3)),
+            left: BorderSide(
+                color: active ? col : Colors.transparent, width: 3)),
       ),
       child: InkWell(
         onTap: () {
@@ -387,163 +393,6 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
       ),
     );
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // ── Top Bar ────────────────────────────────────────────────────────────────
- /*  Widget _topBar(_Layout layout) {
-    if (layout == _Layout.desktop) return _topBarDesktop();
-    if (layout == _Layout.tablet) return _topBarTablet();
-    return _topBarMobile();
-  }
-
-
-
-
-
-
-
-
-
-  Widget _topBarDesktop() => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: const BoxDecoration(
-            color: kPanelBg,
-            border: Border(bottom: BorderSide(color: kBorder))),
-        child: Row(children: [
-          Expanded(
-              child: Text(_viewTitle(_view),
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: kCyan,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold))),
-          const SizedBox(width: 12),
-          Text(_clock,
-              style: const TextStyle(
-                  color: kCyan, fontSize: 13, fontFamily: 'monospace')),
-          const SizedBox(width: 16),
-          const Text('Rol:', style: TextStyle(color: kTextMuted, fontSize: 11)),
-          const SizedBox(width: 4),
-          _sel(_role, {
-            'Ingeniero': 'Ingeniero (Control Total)',
-            'Operador': 'Operador'
-          }, (v) {
-            setState(() {
-              _role = v!;
-            });
-          }, 110),
-          const SizedBox(width: 12),
-          const Text('Modo de Planta:',
-              style: TextStyle(color: kTextMuted, fontSize: 11)),
-          const SizedBox(width: 4),
-          _sel(_mode,
-              {'manual': 'Manual (Forzar/Simular)', 'auto': 'Automático'}, (v) {
-            setState(() {
-              _mode = v!;
-            });
-          }, 130),
-        ]),
-      );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Widget _topBarTablet() => Container(
-        decoration: const BoxDecoration(
-            color: kPanelBg,
-            border: Border(bottom: BorderSide(color: kBorder))),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Row(children: [
-              Expanded(
-                  child: Text(_viewTitle(_view),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: kCyan,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold))),
-              Text(_clock,
-                  style: const TextStyle(
-                      color: kCyan, fontSize: 12, fontFamily: 'monospace')),
-            ]),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Row(children: [
-              const Text('Rol:',
-                  style: TextStyle(color: kTextMuted, fontSize: 10)),
-              const SizedBox(width: 4),
-              _sel(_role, {
-                'Ingeniero': 'Ingeniero (Control Total)',
-                'Operador': 'Operador'
-              }, (v) {
-                setState(() {
-                  _role = v!;
-                });
-              }, 130),
-              const SizedBox(width: 10),
-              const Text('Modo:',
-                  style: TextStyle(color: kTextMuted, fontSize: 10)),
-              const SizedBox(width: 4),
-              _sel(_mode, {
-                'manual': 'Manual (Forzar/Simular)',
-                'auto': 'Automático'
-              }, (v) {
-                setState(() {
-                  _mode = v!;
-                });
-              }, 120),
-            ]),
-          ),
-        ]),
-      );
-
-
-
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   Widget _topBarMobile() => Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -632,63 +481,28 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
   // ── Vista actual ──────────────────────────────────────────────────────────
   Widget _buildView() {
     switch (_view) {
-
-      
       // ── Estaciones SCADA (paneles vacíos por ahora) ───────────────────────
       case AppView.dashboard:
-  return const AnalyticsDashboard();
-
+        return const AnalyticsDashboard();
 
       case AppView.neumatico:
-      return const ScadaNeumaticoBoard();
+        return const ScadaNeumaticoBoard();
 
       case AppView.robot:
-      return const ScadaRobotDashboard();
-
+        return const ScadaRobotDashboard();
 
       case AppView.maquinado:
-      return const ScadaMaquinadosDashboard();
+        return const ScadaMaquinadosDashboard();
 
-
-     case AppView.prensado:
-      return const ScadaPrensadoScreen();
-      
-
-        //return _emptyStation('Centro Neumático', '⚙️', kCyan,
-            //'TMPPC24-A · Punching Machine 24V');
-
-/* 
-
-      case AppView.robot:
-        return _emptyStation('Robot 3 Ejes', '🤖', kPurple,
-            'TM3DR24-A · 3D Robot 24V · Pick & Place');
-      case AppView.maquinado:
-        return _emptyStation(
-            'Centro Maquinados', '🛠️', kGreen, 'TMINL24-A · Indexed Line 24V');
       case AppView.prensado:
-        return _emptyStation('Centro de Prensado', '🛑', kRed,
-            'TMPUM24-A · Punching Machine 24V');
-
- */
-
-
-
-
-
-
-
-
-
+        return const ScadaPrensadoScreen();
 
       // ── Nuevas secciones del sistema ──────────────────────────────────────
       case AppView.conexiones:
         return const ConexionesScreen();
 
-
       case AppView.diagnostico_conexiones:
-        return const DiagnosticoScreen();  
-
-
+        return const DiagnosticoScreen();
 
       case AppView.historial:
         return const LogsScreen();
@@ -698,71 +512,9 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
         return const CloudSyncDashboard();
       case AppView.chatbot:
         return _buildChatbotView();
-      case AppView.robot:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case AppView.maquinado:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case AppView.prensado:
-        // TODO: Handle this case.
-        throw UnimplementedError();
     }
   }
-/* 
-  // ── Panel vacío de estación ────────────────────────────────────────────────
-  Widget _emptyStation(String name, String emoji, Color col, String subtitle) =>
-      Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: col.withOpacity(0.08),
-              shape: BoxShape.circle,
-              border: Border.all(color: col.withOpacity(0.35), width: 2),
-            ),
-            child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 40))),
-          ),
-          const SizedBox(height: 22),
-          Text(name.toUpperCase(),
-              style: TextStyle(
-                  color: col,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5)),
-          const SizedBox(height: 6),
-          Text(subtitle,
-              style: const TextStyle(color: kTextMuted, fontSize: 12)),
-          const SizedBox(height: 28),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              border: Border.all(color: col.withOpacity(0.4)),
-              borderRadius: BorderRadius.circular(8),
-              color: col.withOpacity(0.06),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.construction_rounded, color: col, size: 16),
-              const SizedBox(width: 8),
-              Text('Panel en construcción',
-                  style: TextStyle(
-                      color: col, fontSize: 13, fontWeight: FontWeight.w500)),
-            ]),
-          ),
-        ]),
-      );
 
-
- */
-
-
-
-
-
-
-  // ── Dashboard General ──────────────────────────────────────────────────────
   Widget _dashboard() => SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child:

@@ -24,6 +24,10 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   pdf: ^3.10.8
   printing: ^5.11.1
+  bcrypt: ^1.2.0
+  flutter_bcrypt: ^1.0.8
+  firebase_core: ^4.9.0
+  cloud_firestore: ^6.4.1
 
 dev_dependencies:
   flutter_test:

@@ -2,24 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-
-void main() {
-  runApp(const LoginApp());
-}
-
-class LoginApp extends StatelessWidget {
-  const LoginApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Industrial Login',
-      theme: ThemeData.dark(),
-      home: const LoginScreen(),
-    );
-  }
-}
+import 'package:bcrypt/bcrypt.dart'; // Corregido: Usa el paquete bcrypt
+import 'user_model.dart'; // Importa el modelo de usuario centralizado
 
 // ================= ANIMATIONS =================
 class FadeInSlide extends StatefulWidget {
@@ -105,12 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (picked != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('¡Bienvenido, $picked!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -160,8 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _validateEmail();
     _validatePassword();
     if (emailError == null && passwordError == null) {
-      if (emailController.text.isEmpty ||
-          passwordController.text.isEmpty) {
+      if (emailController.text.isEmpty || passwordController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Por favor, rellene todos los campos.'),
@@ -170,12 +148,38 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Inicio de sesión exitoso'),
-          backgroundColor: Colors.green,
-        ),
-      );
+
+      try {
+        final user = usuariosNotifier.value.firstWhere(
+          (u) => u.email == emailController.text,
+          orElse: () => throw Exception(), // Evita error si no se encuentra
+        );
+        
+        // Corregido: Usa BCrypt.checkpw (sincrónico)
+        final isCorrect = BCrypt.checkpw(passwordController.text, user.passwordHash);
+
+        if (isCorrect) {
+          if (user.activo) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tu cuenta está inactiva. Contacta al administrador.'),
+                backgroundColor: Colors.orangeAccent,
+              ),
+            );
+          }
+        } else {
+          throw Exception();
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Credenciales incorrectas. Inténtalo de nuevo.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -193,8 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: BoxDecoration(
                 color: Colors.white10,
                 borderRadius: BorderRadius.circular(22),
-                border:
-                    Border.all(color: Colors.blueAccent.withOpacity(.3)),
+                border: Border.all(color: Colors.blueAccent.withOpacity(.3)),
               ),
               child: Column(
                 children: [
@@ -223,12 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Correo o usuario', Icons.person_outline)
                           .copyWith(
                         errorText: emailError,
-                        errorStyle:
-                            const TextStyle(color: Colors.orangeAccent),
+                        errorStyle: const TextStyle(color: Colors.orangeAccent),
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: Colors.orangeAccent),
+                          borderSide:
+                              const BorderSide(color: Colors.orangeAccent),
                         ),
                       ),
                     ),
@@ -247,15 +249,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             const TextStyle(color: Colors.orangeAccent),
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: Colors.orangeAccent),
+                          borderSide:
+                              const BorderSide(color: Colors.orangeAccent),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(obscure
                               ? Icons.visibility_off
                               : Icons.visibility),
-                          onPressed: () =>
-                              setState(() => obscure = !obscure),
+                          onPressed: () => setState(() => obscure = !obscure),
                         ),
                       ),
                     ),
@@ -267,8 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Checkbox(
                           value: rememberMe,
-                          onChanged: (v) =>
-                              setState(() => rememberMe = v!),
+                          onChanged: (v) => setState(() => rememberMe = v!),
                         ),
                         const Text('Recordar sesión'),
                         const Spacer(),
@@ -276,8 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const ForgotPasswordScreen(),
+                              builder: (_) => const ForgotPasswordScreen(),
                             ),
                           ),
                           child: const Text('¿Olvidaste tu contraseña?'),
@@ -321,8 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.black87, size: 26),
                       label: const Text('Continuar con Google',
                           style: TextStyle(color: Colors.black87)),
-                      style:
-                          socialButtonStyle(backgroundColor: Colors.white),
+                      style: socialButtonStyle(backgroundColor: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -359,7 +357,7 @@ class _GoogleAccountPickerDialog extends StatelessWidget {
   const _GoogleAccountPickerDialog();
 
   static const _accounts = [
-    {'name': 'Usuario Demo',   'email': 'demo@gmail.com'},
+    {'name': 'Usuario Demo', 'email': 'demo@gmail.com'},
     {'name': 'Cuenta Trabajo', 'email': 'trabajo@gmail.com'},
   ];
 
@@ -367,8 +365,7 @@ class _GoogleAccountPickerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color(0xFF101725),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: const [
           Icon(Icons.g_mobiledata, color: Colors.blueAccent, size: 28),
@@ -387,8 +384,7 @@ class _GoogleAccountPickerDialog extends StatelessWidget {
             ),
             title: Text(acc['name']!),
             subtitle: Text(acc['email']!,
-                style:
-                    const TextStyle(color: Colors.white54, fontSize: 12)),
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
             onTap: () => Navigator.of(context).pop(acc['name']),
           );
         }).toList(),
@@ -424,6 +420,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Colors.orange,
   ];
 
+  final _nombreController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _controlNumberController = TextEditingController();
@@ -439,6 +437,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _nombreController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _controlNumberController.dispose();
@@ -456,13 +456,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  void _registrarUsuario() {
+    // Validar que los campos no estén vacíos
+    if (_nombreController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, completa todos los campos correctamente.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final String password = _passwordController.text;
+    // Corregido: Usa BCrypt.hashpw (sincrónico)
+    final String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
+    final nuevoUsuario = Usuario(
+      id: (usuariosNotifier.value.length + 1).toString(),
+      nombre: _nombreController.text,
+      rol: 'Operador', // Rol por defecto
+      email: _emailController.text,
+      passwordHash: hashedPassword,
+      activo: true,
+      ultimoAcceso: DateTime.now(),
+    );
+
+    // Actualiza el ValueNotifier para notificar a los oyentes
+    final currentUsers = List<Usuario>.from(usuariosNotifier.value);
+    currentUsers.add(nuevoUsuario);
+    usuariosNotifier.value = currentUsers;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Cuenta creada exitosamente!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context);
+  }
+
   void _pickAvatar() {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF101725),
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(20),
@@ -585,8 +628,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FadeInSlide(
             delay: const Duration(milliseconds: 200),
             child: TextField(
-              decoration:
-                  inputDecoration('Nombre completo', Icons.person),
+              controller: _nombreController,
+              decoration: inputDecoration('Nombre completo', Icons.person),
             ),
           ),
           const SizedBox(height: 15),
@@ -599,11 +642,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(12),
               ],
-              decoration:
-                  inputDecoration('Número de Control', Icons.badge)
-                      .copyWith(
-                counterText:
-                    '${_controlNumberController.text.length} / 12',
+              decoration: inputDecoration('Número de Control', Icons.badge)
+                  .copyWith(
+                counterText: '${_controlNumberController.text.length} / 12',
               ),
             ),
           ),
@@ -611,8 +652,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FadeInSlide(
             delay: const Duration(milliseconds: 400),
             child: TextField(
-              decoration:
-                  inputDecoration('Número de Teléfono', Icons.phone),
+              decoration: inputDecoration('Número de Teléfono', Icons.phone),
               keyboardType: TextInputType.phone,
             ),
           ),
@@ -637,6 +677,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FadeInSlide(
             delay: const Duration(milliseconds: 600),
             child: TextField(
+              controller: _emailController,
               decoration: inputDecoration('Correo', Icons.email),
             ),
           ),
@@ -652,8 +693,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 10),
           FadeInSlide(
             delay: const Duration(milliseconds: 700),
-            child: PasswordStrengthIndicator(
-                password: _passwordController.text),
+            child: PasswordStrengthIndicator(password: _passwordController.text),
           ),
           const SizedBox(height: 15),
           FadeInSlide(
@@ -661,16 +701,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: TextField(
               controller: _confirmPasswordController,
               obscureText: true,
-              decoration:
-                  inputDecoration('Confirmar contraseña', Icons.lock)
-                      .copyWith(
+              decoration: inputDecoration('Confirmar contraseña', Icons.lock)
+                  .copyWith(
                 errorText: _confirmPasswordError,
-                errorStyle:
-                    const TextStyle(color: Colors.orangeAccent),
+                errorStyle: const TextStyle(color: Colors.orangeAccent),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide:
-                      const BorderSide(color: Colors.orangeAccent),
+                  borderSide: const BorderSide(color: Colors.orangeAccent),
                 ),
               ),
             ),
@@ -709,8 +746,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FadeInSlide(
             delay: const Duration(milliseconds: 1000),
             child: ElevatedButton(
-              onPressed:
-                  acceptedTerms ? () => Navigator.pop(context) : null,
+              onPressed: acceptedTerms ? _registrarUsuario : null,
               style: buttonStyle(),
               child: const SizedBox(
                 width: double.infinity,
@@ -724,8 +760,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: buttonStyle().copyWith(
-                backgroundColor:
-                    MaterialStateProperty.all(Colors.grey),
+                backgroundColor: MaterialStateProperty.all(Colors.grey),
               ),
               child: const SizedBox(
                 width: double.infinity,
@@ -742,8 +777,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 // ================= PASSWORD STRENGTH =================
 class PasswordStrengthIndicator extends StatelessWidget {
   final String password;
-  const PasswordStrengthIndicator(
-      {super.key, required this.password});
+  const PasswordStrengthIndicator({super.key, required this.password});
 
   double _getStrength() {
     if (password.isEmpty) return 0;
@@ -818,8 +852,7 @@ class ForgotPasswordScreen extends StatelessWidget {
         children: [
           const FadeInSlide(
             child: TextField(
-              decoration:
-                  InputDecoration(hintText: 'Correo o teléfono'),
+              decoration: InputDecoration(hintText: 'Correo o teléfono'),
             ),
           ),
           const SizedBox(height: 25),
@@ -831,8 +864,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: buttonStyle().copyWith(
-                    backgroundColor:
-                        MaterialStateProperty.all(Colors.grey),
+                    backgroundColor: MaterialStateProperty.all(Colors.grey),
                   ),
                   child: const Text('Cancelar'),
                 ),
@@ -859,8 +891,7 @@ class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
 
   @override
-  State<VerificationScreen> createState() =>
-      _VerificationScreenState();
+  State<VerificationScreen> createState() => _VerificationScreenState();
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
@@ -880,7 +911,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
       _start = 30;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       if (_start == 0) {
         setState(() => _canResend = true);
         t.cancel();
@@ -925,14 +959,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   child: Text(
                     'Reenviar código',
                     style: TextStyle(
-                        color: _canResend
-                            ? Colors.blueAccent
-                            : Colors.grey),
+                        color: _canResend ? Colors.blueAccent : Colors.grey),
                   ),
                 ),
                 if (!_canResend)
-                  Text(': $_start s',
-                      style: const TextStyle(color: Colors.grey)),
+                  Text(': $_start s', style: const TextStyle(color: Colors.grey)),
               ],
             ),
           ),
@@ -945,17 +976,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: buttonStyle().copyWith(
-                    backgroundColor:
-                        MaterialStateProperty.all(Colors.grey),
+                    backgroundColor: MaterialStateProperty.all(Colors.grey),
                   ),
                   child: const Text('Atrás'),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            const ResetPasswordScreen()),
+                    MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
                   ),
                   style: buttonStyle(),
                   child: const Text('Verificar'),
@@ -973,20 +1001,20 @@ class PinputSimulation extends StatefulWidget {
   const PinputSimulation({super.key});
 
   @override
-  State<PinputSimulation> createState() =>
-      _PinputSimulationState();
+  State<PinputSimulation> createState() => _PinputSimulationState();
 }
 
 class _PinputSimulationState extends State<PinputSimulation> {
-  final List<FocusNode> _focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final n in _focusNodes) n.dispose();
+    for (final c in _controllers)
+      c.dispose();
+    for (final n in _focusNodes)
+      n.dispose();
     super.dispose();
   }
 
@@ -1004,13 +1032,11 @@ class _PinputSimulationState extends State<PinputSimulation> {
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             maxLength: 1,
-            style: const TextStyle(
-                fontSize: 22, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             decoration: const InputDecoration(
               counterText: '',
               border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(12))),
+                  borderRadius: BorderRadius.all(Radius.circular(12))),
               filled: true,
               fillColor: Colors.white10,
             ),
@@ -1034,12 +1060,10 @@ class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() =>
-      _ResetPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState
-    extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _confirmPasswordError;
@@ -1080,15 +1104,13 @@ class _ResetPasswordScreenState
             child: TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration:
-                  inputDecoration('Nueva contraseña', Icons.lock),
+              decoration: inputDecoration('Nueva contraseña', Icons.lock),
             ),
           ),
           const SizedBox(height: 10),
           FadeInSlide(
             delay: const Duration(milliseconds: 100),
-            child: PasswordStrengthIndicator(
-                password: _passwordController.text),
+            child: PasswordStrengthIndicator(password: _passwordController.text),
           ),
           const SizedBox(height: 15),
           FadeInSlide(
@@ -1096,16 +1118,13 @@ class _ResetPasswordScreenState
             child: TextField(
               controller: _confirmPasswordController,
               obscureText: true,
-              decoration:
-                  inputDecoration('Confirmar contraseña', Icons.lock)
-                      .copyWith(
+              decoration: inputDecoration('Confirmar contraseña', Icons.lock)
+                  .copyWith(
                 errorText: _confirmPasswordError,
-                errorStyle:
-                    const TextStyle(color: Colors.orangeAccent),
+                errorStyle: const TextStyle(color: Colors.orangeAccent),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide:
-                      const BorderSide(color: Colors.orangeAccent),
+                  borderSide: const BorderSide(color: Colors.orangeAccent),
                 ),
               ),
             ),
@@ -1119,14 +1138,13 @@ class _ResetPasswordScreenState
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: buttonStyle().copyWith(
-                    backgroundColor:
-                        MaterialStateProperty.all(Colors.grey),
+                    backgroundColor: MaterialStateProperty.all(Colors.grey),
                   ),
                   child: const Text('Atrás'),
                 ),
                 ElevatedButton(
-                  onPressed: () => Navigator.popUntil(
-                      context, (r) => r.isFirst),
+                  onPressed: () =>
+                      Navigator.popUntil(context, (r) => r.isFirst),
                   style: buttonStyle(),
                   child: const Text('Restablecer'),
                 ),
@@ -1287,8 +1305,7 @@ ButtonStyle socialButtonStyle({required Color backgroundColor}) {
   return ElevatedButton.styleFrom(
     backgroundColor: backgroundColor,
     minimumSize: const Size(double.infinity, 50),
-    padding:
-        const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14),
       side: backgroundColor == Colors.black
