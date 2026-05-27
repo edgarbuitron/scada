@@ -1,611 +1,290 @@
-// ============================================================
-// CENTRO NEUMÁTICO SCADA 4.0 -- Flutter
-// Exporta: ScadaNeumaticoBoard  (usado por main.dart)
-// ============================================================
-
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'firebase_service.dart';
 
-// ── Paleta propia (nombres distintos a main.dart para evitar conflictos) ──
-const Color kBg = Color(0xFF081014);
-const Color kPanel = Color(0xFF11222C);
-const Color kCyanN = Color(0xFF00EAFF);
-const Color kGreenN = Color(0xFF00FF88);
-const Color kRedN = Color(0xFFFF3366);
-const Color kBorderN = Color(0xFF1A3644);
-const Color kText = Color(0xFFC5D1D8);
-const Color kAudit = Color(0xFFFFAA00);
-const Color kDark = Color(0xFF0C1820);
+// ─── Colores y Estilos ────────────────────────────────────────────────────────
+const Color kBg = Color(0xFF0A192F);
+const Color kPanel = Color(0xFF172A46);
+const Color kAccent = Color(0xFF64FFDA);
+const Color kGreen = Color(0xFF10B981);
+const Color kRed = Color(0xFFF43F5E);
+const Color kBorder = Color(0xFF233554);
+const Color kText = Color(0xFFD3E0F2);
+const Color kMuted = Color(0xFF8892B0);
 
-// ── Modelos internos (privados a este archivo) ────────────────────────────
-enum _NLogType { info, audit, error, success }
+// ─── Modelos de Datos ────────────────────────────────────────────────────────
+class LogEntry {
+  final String time, user, message;
+  final String type; // 'Info', 'Audit', 'Error', 'Success'
 
-class _NLogEntry {
-  final String time, role, message;
-  final _NLogType type;
-  const _NLogEntry(this.time, this.role, this.message, this.type);
-  Color get color => type == _NLogType.error
-      ? kRedN
-      : type == _NLogType.audit
-          ? kAudit
-          : type == _NLogType.success 
-            ? kGreenN
-            : kText;
+  LogEntry({required this.time, required this.user, required this.message, required this.type});
+
+  Color get color {
+    switch (type) {
+      case 'Error': return kRed;
+      case 'Success': return kGreen;
+      case 'Audit': return kAccent;
+      default: return kText;
+    }
+  }
 }
 
-class _SensorModel {
-  final String id, label;
-  bool active;
-  _SensorModel(this.id, this.label, {this.active = false});
+class Actuator {
+  final String id, name;
+  bool isOn;
+  Actuator({required this.id, required this.name, this.isOn = false});
 }
 
-class _ActuatorModel {
-  final String id, label;
-  bool on;
-  bool disabled;
-  _ActuatorModel(this.id, this.label, {this.on = false, this.disabled = false});
+class Sensor {
+  final String id, name;
+  bool isActive;
+  Sensor({required this.id, required this.name, this.isActive = false});
 }
 
-// ── Widget público exportado ──────────────────────────────────────────────
-class ScadaNeumaticoBoard extends StatefulWidget {
-  const ScadaNeumaticoBoard({super.key});
-
+// ─── Pantalla Principal ─────────────────────────────────────────────────────
+class ScadaNeumaticoScreen extends StatefulWidget {
+  const ScadaNeumaticoScreen({super.key});
   @override
-  State<ScadaNeumaticoBoard> createState() => _ScadaNeumaticoScreenState();
+  State<ScadaNeumaticoScreen> createState() => _ScadaNeumaticoScreenState();
 }
 
-class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoBoard> {
-  String _clock = '';
-  late Timer _clockTimer;
-  String _role = 'Ingeniero';
-  String _mode = 'manual';
+class _ScadaNeumaticoScreenState extends State<ScadaNeumaticoScreen> {
+  final FirebaseService _firebaseService = FirebaseService();
+  final String _maquetaId = 'neumatico';
+
+  // Estado del SCADA
   bool _isCycleRunning = false;
-  double _pressure = 1.0;
+  String _mode = 'manual';
+  String _role = 'Operador';
   int _piezas = 0;
+  final List<LogEntry> _logs = [];
+  final ScrollController _logScrollController = ScrollController();
 
-  final TextEditingController _piezasController = TextEditingController(text: '1');
-  final List<double> _chartData = List.filled(40, 1.0);
-
-  final List<_SensorModel> _sensors = [
-    _SensorModel('P1', 'P1: Input Storage (Pieza)'),
-    _SensorModel('P2', 'P2: Conveyor Final (Llegada)'),
-    _SensorModel('S1', 'S1: Punching Machine (Pos.)'),
-    _SensorModel('S3', 'S3: Turntable Load'),
-    _SensorModel('S2', 'S2: PARO EMERGENCIA'),
-  ];
-
-  final List<_ActuatorModel> _actuators = [
-    _ActuatorModel('M1', 'M1: Compresor Neumático'),
-    _ActuatorModel('M2', 'M2: Mesa Giratoria'),
-    _ActuatorModel('M3', 'M3: Banda Transportadora'),
-    _ActuatorModel('V1', 'V1: Pistón Entrada'),
-    _ActuatorModel('V3', 'V3: Perforadora'),
-    _ActuatorModel('V4', 'V4: Expulsión'),
-  ];
-
-  final List<_NLogEntry> _logs = [];
-  final ScrollController _logScroll = ScrollController();
-
-  _SensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
-  _ActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
-  bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
+  final List<Actuator> _actuators = [Actuator(id: '1', name: 'Válvula A'), Actuator(id: '2', name: 'Válvula B')];
+  final List<Sensor> _sensors = [Sensor(id: 'A0', name: 'Cilindro A en Home'), Sensor(id: 'A1', name: 'Cilindro A Extendido'), Sensor(id: 'B0', name: 'Cilindro B en Home'), Sensor(id: 'B1', name: 'Cilindro B Extendido')];
 
   @override
   void initState() {
     super.initState();
-    _updateClock();
-    _clockTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      if(mounted) {
-        setState(() {
-          _updateClock();
-          _simulatePressure();
-        });
-      }
-    });
-    _logAudit('Configuración cambiada a Modo: $_mode', _NLogType.audit);
+    _firebaseService.initializeMaqueta(_maquetaId);
     _resetToHome(log: false);
-  }
-
-  void _updateClock() {
-    final n = DateTime.now();
-    _clock =
-        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-  }
-
-  void _simulatePressure() {
-    if (_act('M1').on) _pressure += 0.2;
-    else _pressure -= 0.05;
-    _pressure += (Random().nextDouble() - 0.5) * 0.1;
-    _pressure = _pressure.clamp(1.0, 5.0);
-    if(mounted) {
-      setState(() {
-        _chartData.removeAt(0);
-        _chartData.add(_pressure);
-      });
-    }
+    _logAudit('Sistema Neumático Inicializado', 'Info');
   }
 
   @override
   void dispose() {
-    _clockTimer.cancel();
-    _logScroll.dispose();
-    _piezasController.dispose();
+    _logScrollController.dispose();
     super.dispose();
   }
 
-  void _logAudit(String message, _NLogType type) {
-    final n = DateTime.now();
-    final time =
-        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
-    if(mounted) {
-      setState(() => _logs.add(_NLogEntry(time, _role, message, type)));
+  void _logAudit(String message, String type) {
+    final now = DateTime.now();
+    final time = DateFormat('HH:mm:ss').format(now);
+    if (mounted) {
+      setState(() => _logs.add(LogEntry(time: time, user: _role, message: message, type: type)));
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_logScroll.hasClients) {
-          _logScroll.animateTo(_logScroll.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-        }
+        if (_logScrollController.hasClients) _logScrollController.jumpTo(_logScrollController.position.maxScrollExtent);
       });
-    }
-  }
 
-  void _updatePermissions() {
-    for (final a in _actuators) {
-      a.disabled = (_role == 'Operador' || _mode == 'auto' || _isCycleRunning);
-    }
-    _logAudit('Configuración cambiada a Modo: $_mode', _NLogType.audit);
-  }
-
-  void _toggleSensor(String id) {
-    if (_mode != 'manual') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Cambia el Modo a 'Manual' para simular sensores."),
-        backgroundColor: kAudit,
-      ));
-      return;
-    }
-    final s = _sensor(id);
-    if(mounted) setState(() => s.active = !s.active);
-    _logAudit('Simulación Manual: Sensor $id forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}', _NLogType.audit);
-  }
-
-  void _toggleActuator(String id, bool val) {
-    if(mounted) setState(() => _act(id).on = val);
-    if (!_isCycleRunning) {
-      _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', _NLogType.audit);
-    }
-  }
-  
-  void _resetToHome({bool log = true}){
-    if(log) _logAudit('Restableciendo sistema a estado inicial...', _NLogType.audit);
-     if(mounted) {
-      setState(() {
-        _isCycleRunning = false;
-        for (final a in _actuators) { a.on = false; }
-        for (final s in _sensors) { s.active = false; }
-         _sensor('P1').active = true;
-      });
-    }
-    if(log) _logAudit('Sistema restablecido a la posición HOME.', _NLogType.success);
-  }
-
-  Future<void> _startAutoCycle() async {
-    if (_isCycleRunning) return;
-     final int numPiezas = int.tryParse(_piezasController.text) ?? 0;
-    if (numPiezas <= 0) {
-      _logAudit('ERROR: El número de ciclos debe ser mayor a 0.', _NLogType.error);
-      return;
-    }
-    if (_pressure < 2.5) {
-      _logAudit('Falla de arranque: Presión neumática insuficiente.', _NLogType.error);
-      return;
-    }
-    if(mounted) setState(() { _isCycleRunning = true; _updatePermissions(); });
-    _logAudit('══ INICIANDO CICLO AUTOMÁTICO PARA $numPiezas CICLOS ══', _NLogType.info);
-
-    for (int i = 0; i < numPiezas; i++) {
-      if (!_isCycleRunning) break;
-      _logAudit('--- Procesando pieza ${i + 1} de $numPiezas ---', _NLogType.info);
-      await _runSingleCycle();
-       if (!_isCycleRunning) {
-        _logAudit('Ciclo interrumpido por PARO DE EMERGENCIA.', _NLogType.error);
-        break;
+      String logTypeForHistory;
+      switch(type) {
+        case 'Error': logTypeForHistory = 'Critico'; break;
+        case 'Audit': logTypeForHistory = 'Advertencia'; break;
+        default: logTypeForHistory = 'Info';
       }
-    }
-    if(mounted) setState(() { _isCycleRunning = false; _updatePermissions(); });
-    _logAudit('══ CICLO AUTOMÁTICO FINALIZADO ══', _NLogType.info);
-  }
-
-  Future<void> _runSingleCycle() async {
-    try {
-      if (!_isCycleRunning || !mounted) return;
-      _toggleActuator('V1', true); setState(() => _sensor('P1').active = false);
-      await Future.delayed(const Duration(seconds: 1));
-      if (!_isCycleRunning || !mounted) return; _toggleActuator('V1', false);
-      _toggleActuator('M3', true); await Future.delayed(const Duration(milliseconds: 1500));
-      if (!_isCycleRunning || !mounted) return; setState(() => _sensor('P2').active = true);
-      _toggleActuator('M3', false); _toggleActuator('M2', true);
-      await Future.delayed(const Duration(seconds: 1));
-      if (!_isCycleRunning || !mounted) return; setState(() => _sensor('S1').active = true);
-      _toggleActuator('M2', false); _toggleActuator('V3', true);
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (!_isCycleRunning || !mounted) return; _toggleActuator('V3', false);
-      _toggleActuator('V4', true); await Future.delayed(const Duration(seconds: 1));
-      if (!_isCycleRunning || !mounted) return; _toggleActuator('V4', false);
-      if(mounted) setState(() { _sensor('P2').active = false; _sensor('S1').active = false; _sensor('P1').active = true; _piezas++; });
-      _logAudit('CICLO EXITOSO. Pieza #${_piezas} terminada.', _NLogType.success);
-    } catch (_) {
-      _logAudit('Error en la secuencia automática.', _NLogType.error);
+      _firebaseService.guardarLog(_maquetaId, {'role': _role, 'message': message, 'type': logTypeForHistory});
     }
   }
 
-  void _triggerEmergency() {
-    if(mounted) {
-      setState(() {
-        _isCycleRunning = false;
-        for (final a in _actuators) { a.on = false; }
-      });
+  void _setMode(String? newMode) {
+    if (newMode != null && !_isCycleRunning) {
+      setState(() => _mode = newMode);
+      _logAudit('Modo cambiado a $newMode', 'Audit');
     }
-    _logAudit('¡PARO DE EMERGENCIA (S2) ACTIVADO! Desconectando energía...', _NLogType.error);
-    if(mounted) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          backgroundColor: kPanel,
-          title: const Text('📲 NOTIFICACIÓN PUSH AL SUPERVISOR', style: TextStyle(color: kRedN, fontSize: 14)),
-          content: const Text('Alerta Crítica: Paro de Emergencia presionado en Línea 1.', style: TextStyle(color: kText)),
-          actions: [ TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: kCyanN))) ],
-        ),
-      );
+  }
+
+  void _toggleActuator(String id, bool value) {
+    if (_mode == 'manual' && !_isCycleRunning) {
+      setState(() => _actuators.firstWhere((a) => a.id == id).isOn = value);
+      _logAudit('Actuador $id ${value ? 'activado' : 'desactivado'} manualmente', 'Audit');
+      _firebaseService.registrarAccionComponente(_maquetaId, 'actuador_${id}_${value ? 'on' : 'off'}');
     }
+  }
+
+  void _resetToHome({bool log = true}) {
+    if(log) _logAudit('Sistema reseteado a HOME', 'Audit');
+    setState(() {
+      _actuators.forEach((a) => a.isOn = false);
+      _sensors.forEach((s) => s.isActive = s.id.endsWith('0'));
+      _isCycleRunning = false;
+    });
+    if(log) _firebaseService.registrarReset(_maquetaId);
+  }
+
+  void _emergencyStop() {
+    _logAudit('¡PARO DE EMERGENCIA ACTIVADO!', 'Error');
+    _firebaseService.registrarParoEmergencia(_maquetaId);
+    _firebaseService.registrarAccionComponente(_maquetaId, 'paro_emergencia');
+    _resetToHome(log: false);
+  }
+
+  Future<void> _startCycle() async {
+    if (_isCycleRunning) return;
+    setState(() => _isCycleRunning = true);
+    _logAudit('Iniciando ciclo automático: A+ B+ B- A-', 'Info');
+
+    await _executeStep('A+', () => _actuators[0].isOn = true, () => _sensors[1].isActive);
+    await _executeStep('B+', () => _actuators[1].isOn = true, () => _sensors[3].isActive);
+    await _executeStep('B-', () => _actuators[1].isOn = false, () => _sensors[2].isActive);
+    await _executeStep('A-', () => _actuators[0].isOn = false, () => _sensors[0].isActive);
+
+    if (_isCycleRunning) {
+      setState(() => _piezas++);
+      _logAudit('Ciclo completado. Pieza #${_piezas}', 'Success');
+      _firebaseService.incrementarPiezas(_maquetaId);
+    }
+    setState(() => _isCycleRunning = false);
+  }
+
+  Future<void> _executeStep(String stepName, VoidCallback action, bool Function() condition) async {
+    if (!_isCycleRunning) return;
+    _logAudit('Ejecutando: $stepName', 'Info');
+    setState(action);
+    await Future.delayed(const Duration(milliseconds: 500)); // Simulación de movimiento
+    // Lógica de simulación para sensores
+    if(stepName == 'A+') { setState(() { _sensors[0].isActive = false; _sensors[1].isActive = true; }); }
+    if(stepName == 'B+') { setState(() { _sensors[2].isActive = false; _sensors[3].isActive = true; }); }
+    if(stepName == 'B-') { setState(() { _sensors[3].isActive = false; _sensors[2].isActive = true; }); }
+    if(stepName == 'A-') { setState(() { _sensors[1].isActive = false; _sensors[0].isActive = true; }); }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: kBg,
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 16),
-              _buildTopBar(),
-              const SizedBox(height: 10),
-              _buildRow1(),
-              const SizedBox(height: 10),
-              _buildRow2(),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
+      body: Padding(padding: const EdgeInsets.all(16.0), child: Column(children: [ _buildHeader(), const SizedBox(height: 16), Expanded(child: _buildBody()) ])),
     );
-  }
 
-  Widget _buildHeader() => Container(
-        padding: const EdgeInsets.only(bottom: 10),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kCyanN, width: 2))),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('CENTRO NEUMÁTICO SCADA', style: TextStyle(color: kCyanN, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.4)),
-            Text(_clock, style: const TextStyle(color: kText, fontSize: 14, fontFamily: 'monospace')),
-          ],
-        ),
-      );
-
-  Widget _buildTopBar() => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: kPanel, border: Border.all(color: kBorderN), borderRadius: BorderRadius.circular(8)),
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 10,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            _labeledSelect('Modo:', _mode, {
-              'manual': 'Manual (Simulación Física)',
-              'auto': 'Automático',
-            }, (v) {
-              if(mounted) setState(() => _mode = v!);
-              _updatePermissions();
-            }),
-            _buildPiezasInput(),
-            ElevatedButton.icon(
-              onPressed: _btnAutoEnabled ? _startAutoCycle : null,
-              icon: Icon(_isCycleRunning ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded, size: 16),
-              label: const Text('INICIAR CICLO'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGreenN, foregroundColor: Colors.black,
-                disabledBackgroundColor: const Color(0xFF333333), disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: _triggerEmergency,
-              icon: const Icon(Icons.warning_amber_rounded, size: 16),
-              label: const Text('PARO EMERGENCIA'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kRedN, foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: _isCycleRunning ? null : () => _resetToHome(),
-              icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
-              label: const Text('RESTABLECER'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kCyanN, foregroundColor: Colors.black,
-                disabledBackgroundColor: const Color(0xFF333333), disabledForegroundColor: const Color(0xFF666666),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-            _kpiBox('Piezas Terminadas', '$_piezas'),
-          ],
-        ),
-      );
-
-  Widget _buildPiezasInput() => Row(
-    mainAxisSize: MainAxisSize.min,
+  Widget _buildHeader() => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      const Text("Piezas:", style: TextStyle(color: kText, fontSize: 12)),
+      const Text('SCADA - Centro Neumático', style: TextStyle(color: kText, fontSize: 24, fontWeight: FontWeight.bold)),
+      Row(children: [
+        _kpiBox('Piezas', '$_piezas', kGreen),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(onPressed: _emergencyStop, icon: const Icon(Icons.warning, color: kRed), label: const Text('Paro Emergencia'), style: ElevatedButton.styleFrom(backgroundColor: kRed.withOpacity(0.2))),
+      ]),
+    ],
+  );
+
+  Widget _buildBody() => Row(
+    children: [
+      Expanded(flex: 2, child: _buildControlPanel()),
+      const SizedBox(width: 16),
+      Expanded(flex: 3, child: _buildVisualPanel()),
+    ],
+  );
+
+  Widget _buildControlPanel() => _panel(
+    title: 'Panel de Control',
+    child: Column(children: [
+      _buildModeSelector(), const SizedBox(height: 16),
+      ..._actuators.map(_buildActuatorSwitch), const SizedBox(height: 16),
+      ..._sensors.map(_buildSensorIndicator), const SizedBox(height: 16),
+      const Spacer(),
+      ElevatedButton.icon(onPressed: (_mode == 'auto' && !_isCycleRunning) ? _startCycle : null, icon: const Icon(Icons.play_arrow), label: const Text('Iniciar Ciclo'), style: ElevatedButton.styleFrom(backgroundColor: kGreen, foregroundColor: Colors.black)),
+      const SizedBox(height: 8),
+      ElevatedButton.icon(onPressed: _resetToHome, icon: const Icon(Icons.refresh), label: const Text('Resetear a Home'), style: ElevatedButton.styleFrom(backgroundColor: kAccent, foregroundColor: Colors.black)),
+    ]),
+  );
+
+  Widget _buildModeSelector() => Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+    const Text('Modo:', style: TextStyle(color: kText)), const SizedBox(width: 10),
+    DropdownButton<String>(value: _mode, items: const [DropdownMenuItem(value: 'manual', child: Text('Manual')), DropdownMenuItem(value: 'auto', child: Text('Automático'))], onChanged: _setMode, style: const TextStyle(color: kAccent), dropdownColor: kPanel),
+  ]);
+
+  Widget _buildActuatorSwitch(Actuator actuator) => SwitchListTile(
+    title: Text(actuator.name, style: const TextStyle(color: kText)),
+    value: actuator.isOn, 
+    onChanged: (v) => _toggleActuator(actuator.id, v),
+    activeColor: kAccent,
+    inactiveTrackColor: kMuted.withOpacity(0.3),
+    activeTrackColor: kAccent.withOpacity(0.5),
+  );
+
+  Widget _buildSensorIndicator(Sensor sensor) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(children: [
+      Icon(Icons.circle, color: sensor.isActive ? kGreen : kMuted, size: 12),
       const SizedBox(width: 8),
-      SizedBox(
-        width: 60,
-        height: 38,
-        child: TextField(
-          controller: _piezasController,
-          enabled: _mode == 'auto',
-          keyboardType: TextInputType.number,
-          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-          textAlign: TextAlign.center,
-          style: TextStyle(color: _mode == 'auto' ? kCyanN : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: kBg,
-            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyanN : kBorderN)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kCyanN : kBorderN)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kCyanN, width: 2)),
-            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: kBorderN)),
+      Text(sensor.name, style: TextStyle(color: sensor.isActive ? kText : kMuted)),
+    ]),
+  );
+
+  Widget _buildVisualPanel() => _panel(
+    title: 'Visualización y Auditoría',
+    child: Column(children: [
+      _buildPiston('A', _sensors[1].isActive), const SizedBox(height: 16),
+      _buildPiston('B', _sensors[3].isActive), const Spacer(),
+      _buildLogConsole(),
+    ]),
+  );
+
+  Widget _buildPiston(String label, bool isExtended) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Cilindro $label', style: const TextStyle(color: kMuted)),
+      const SizedBox(height: 8),
+      Container(
+        height: 40,
+        decoration: BoxDecoration(border: Border.all(color: kBorder), borderRadius: BorderRadius.circular(4)),
+        child: Stack(children: [
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            left: isExtended ? 150 : 0,
+            child: Container(width: 50, color: kAccent, child: Center(child: Text(label, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)))),
           ),
+        ]),
+      ),
+    ],
+  );
+
+  Widget _buildLogConsole() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text('Consola de Eventos', style: TextStyle(color: kMuted)),
+      const SizedBox(height: 8),
+      Container(
+        height: 150, width: double.infinity,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: kBg.withOpacity(0.5), borderRadius: BorderRadius.circular(4)),
+        child: ListView.builder(
+          controller: _logScrollController,
+          itemCount: _logs.length,
+          itemBuilder: (context, index) {
+            final log = _logs[index];
+            return RichText(text: TextSpan(
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              children: [ TextSpan(text: '[${log.time}] ', style: const TextStyle(color: kMuted)), TextSpan(text: log.message, style: TextStyle(color: log.color)) ]
+            ));
+          },
         ),
       ),
     ],
   );
 
-  Widget _labeledSelect(String lbl, String val, Map<String, String> items,
-          ValueChanged<String?> onChanged) =>
-      Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(lbl, style: const TextStyle(color: kText, fontSize: 13)),
-        const SizedBox(width: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: kBg,
-            border: Border.all(color: kCyanN),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: val,
-              dropdownColor: kPanel,
-              style: const TextStyle(color: kCyanN, fontSize: 12),
-              icon: const Icon(Icons.arrow_drop_down, color: kCyanN, size: 18),
-              isDense: true,
-              items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      ]);
-
-  Widget _kpiBox(String label, String value) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: kGreenN.withOpacity(0.1),
-          border: Border.all(color: kGreenN),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(label, style: const TextStyle(color: kText, fontSize: 11)),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(color: kGreenN, fontSize: 24, fontWeight: FontWeight.bold)),
-        ]),
-      );
-
-  Widget _buildRow1() => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 2, child: _buildDigitalTwin()),
-          const SizedBox(width: 12),
-          Expanded(child: _buildSensorsPanel()),
-        ],
-      );
-
-  Widget _buildDigitalTwin() => Container(
-        height: 300,
-        decoration: BoxDecoration(
-          color: kDark,
-          border: Border.all(color: kCyanN),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Stack(children: [
-          const Positioned(
-            top: 10, right: 10,
-            child: Text('Gemelo Digital 2D', style: TextStyle(color: kCyanN, fontWeight: FontWeight.bold, fontSize: 13)),
-          ),
-          Positioned(top: 20, left: 20, child: _dtPart('M1', 'Compresor\n(M1)', w: 80, h: 80, circle: true)),
-          Positioned(top: 100, left: 150, child: _dtPart('V1', 'V1', w: 40, h: 40)),
-          Positioned(top: 150, left: 150, child: _dtPart('M3', 'Banda (M3)', w: 200, h: 40)),
-          Positioned(top: 60, right: 80, child: _dtPart('V3', 'V3', w: 40, h: 40)),
-          Positioned(top: 120, right: 50, child: _dtPart('M2', 'Mesa\n(M2)', w: 100, h: 100, circle: true)),
-          Positioned(top: 230, right: 80, child: _dtPart('V4', 'V4', w: 40, h: 40)),
-        ]),
-      );
-
-  Widget _dtPart(String id, String label, {required double w, required double h, bool circle = false}) {
-    bool active = false;
-    try { active = _actuators.firstWhere((a) => a.id == id).on; } catch (_) {}
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: w, height: h, alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active ? kGreenN : const Color(0xFF333333),
-        border: Border.all(color: active ? Colors.white : const Color(0xFF555555), width: 2),
-        borderRadius: BorderRadius.circular(circle ? h / 2 : 4),
-        boxShadow: active ? [BoxShadow(color: kGreenN.withOpacity(0.6), blurRadius: 15)] : null,
-      ),
-      child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildSensorsPanel() => _panel(
-        title: 'Sensores (Click para simular)',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _sensors.map(_sensorRow).toList(),
-        ),
-      );
-
-  Widget _sensorRow(_SensorModel s) {
-    final bool isEmergency = s.id == 'S2';
-    final Color ledColor = isEmergency && s.active ? kRedN : (!isEmergency && s.active) ? kGreenN : const Color(0xFF333333);
-    return GestureDetector(
-      onTap: () => isEmergency ? _triggerEmergency() : _toggleSensor(s.id),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(4)),
-        child: Row(children: [
-          Expanded(child: Text(s.label, style: const TextStyle(color: kText, fontSize: 12))),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 14, height: 14,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: ledColor, boxShadow: s.active ? [BoxShadow(color: ledColor.withOpacity(0.8), blurRadius: 10)] : null),
-          ),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildRow2() => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _buildActuatorsPanel()),
-          const SizedBox(width: 12),
-          Expanded(flex: 2, child: _buildAuditPanel()),
-        ],
-      );
-
-  Widget _buildActuatorsPanel() => _panel(
-        title: 'Actuadores (Motores y Válvulas)',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ..._actuators.sublist(0, 3).map(_actuatorRow),
-            const SizedBox(height: 8),
-            ..._actuators.sublist(3).map(_actuatorRow),
-          ],
-        ),
-      );
-
-  Widget _actuatorRow(_ActuatorModel a) => Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(4)),
-        child: Row(children: [
-          Expanded(child: Text(a.label, style: const TextStyle(color: kText, fontSize: 12))),
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(value: a.on, onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v), activeColor: Colors.white, activeTrackColor: kCyanN, inactiveThumbColor: Colors.white, inactiveTrackColor: const Color(0xFF333333)),
-          ),
-        ]),
-      );
-
-  Widget _buildAuditPanel() => _panel(
-        title: 'Auditoría (Audit Trail) y Alertas',
-        child: Container(
-          height: 180,
-          decoration: BoxDecoration(color: kBg, border: Border.all(color: kBorderN), borderRadius: BorderRadius.circular(4)),
-          padding: const EdgeInsets.all(10),
-          child: ListView.builder(
-            controller: _logScroll,
-            itemCount: _logs.length,
-            itemBuilder: (_, i) {
-              final l = _logs[i];
-              return Text(
-                '[${l.time}] [${l.role}] - ${l.message}',
-                style: TextStyle(color: l.color, fontSize: 11, fontFamily: 'monospace', fontWeight: l.type == _NLogType.audit ? FontWeight.bold : FontWeight.normal),
-              );
-            },
-          ),
-        ),
-      );
-
-  Widget _buildChartPanel() => _panel(
-        title: 'Presión Neumática (Voltaje Analógico)',
-        child: SizedBox(
-          height: 160,
-          child: CustomPaint(painter: _ChartPainter(List.from(_chartData))),
-        ),
-      );
+  Widget _kpiBox(String label, String value, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+    child: Column(children: [
+      Text(label, style: const TextStyle(color: kText, fontSize: 10)),
+      Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
+    ]),
+  );
 
   Widget _panel({required String title, required Widget child}) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kPanel,
-          border: Border.all(color: kBorderN),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.only(bottom: 8),
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kBorderN))),
-              child: Text(title, style: const TextStyle(color: kCyanN, fontSize: 13, fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 8),
-            child,
-          ],
-        ),
-      );
-}
-
-class _ChartPainter extends CustomPainter {
-  final List<double> data;
-  _ChartPainter(this.data);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double maxY = 6;
-    final gridPaint = Paint()..color = const Color(0xFF1A3644)..strokeWidth = 0.5;
-    for (int i = 0; i <= 6; i++) {
-      final y = size.height - (i / maxY) * size.height;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-      final tp = TextPainter(text: TextSpan(text: '$i', style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(2, y - 10));
-    }
-    if (data.length < 2) return;
-    final path = Path();
-    for (int i = 0; i < data.length; i++) {
-      final x = i / (data.length - 1) * size.width;
-      final y = size.height - (data[i] / maxY) * size.height;
-      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
-    }
-    final fillPath = Path.from(path)..lineTo(size.width, size.height)..lineTo(0, size.height)..close();
-    canvas.drawPath(fillPath, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [const Color(0xFF00EAFF).withOpacity(0.25), const Color(0xFF00EAFF).withOpacity(0.0)]).createShader(Rect.fromLTWH(0, 0, size.width, size.height))..style = PaintingStyle.fill);
-    canvas.drawPath(path, Paint()..color = const Color(0xFF00EAFF)..strokeWidth = 2..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
-  }
-  @override
-  bool shouldRepaint(covariant _ChartPainter old) => true;
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: kPanel, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [ Text(title, style: const TextStyle(color: kAccent, fontSize: 18, fontWeight: FontWeight.bold)), const Divider(color: kBorder, height: 24), Expanded(child: child) ]),
+  );
 }

@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:bcrypt/bcrypt.dart'; // Corregido: Usa el paquete bcrypt
-import 'user_model.dart'; // Importa el modelo de usuario centralizado
+import 'package:bcrypt/bcrypt.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'usuarios.dart';
 
 // ================= ANIMATIONS =================
 class FadeInSlide extends StatefulWidget {
@@ -33,8 +38,7 @@ class _FadeInSlideState extends State<FadeInSlide>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: widget.duration);
+    _controller = AnimationController(vsync: this, duration: widget.duration);
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
@@ -89,6 +93,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (picked != null) {
+      if (rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+      }
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -135,51 +143,57 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void submitLogin() {
+  void submitLogin() async {
     _validateEmail();
     _validatePassword();
-    if (emailError == null && passwordError == null) {
-      if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    if (emailError != null || passwordError != null || emailController.text.isEmpty || passwordController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Por favor, rellene todos los campos.'),
+            content: Text('Por favor, rellene todos los campos correctamente.'),
             backgroundColor: Colors.redAccent,
           ),
         );
         return;
+    }
+
+    try {
+      final db = FirebaseFirestore.instance;
+      final query = await db.collection('usuarios').where('correo', isEqualTo: emailController.text).limit(1).get();
+
+      if (query.docs.isEmpty) {
+        throw Exception('User not found');
       }
 
-      try {
-        final user = usuariosNotifier.value.firstWhere(
-          (u) => u.email == emailController.text,
-          orElse: () => throw Exception(), // Evita error si no se encuentra
-        );
-        
-        // Corregido: Usa BCrypt.checkpw (sincrónico)
-        final isCorrect = BCrypt.checkpw(passwordController.text, user.passwordHash);
+      final userDoc = query.docs.first;
+      final userData = userDoc.data();
 
-        if (isCorrect) {
-          if (user.activo) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tu cuenta está inactiva. Contacta al administrador.'),
-                backgroundColor: Colors.orangeAccent,
-              ),
-            );
-          }
+      final isCorrect = BCrypt.checkpw(passwordController.text, userData['passwordHash']);
+
+      if (isCorrect) {
+        if (userData['activo']) {
+           if (rememberMe) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('isLoggedIn', true);
+            }
+          Navigator.pushReplacementNamed(context, '/home');
         } else {
-          throw Exception();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tu cuenta está inactiva. Contacta al administrador.'),
+              backgroundColor: Colors.orangeAccent,
+            ),
+          );
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Credenciales incorrectas. Inténtalo de nuevo.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+      } else {
+        throw Exception('Incorrect password');
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Credenciales incorrectas. Inténtalo de nuevo.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -409,22 +423,18 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool acceptedTerms = false;
+  bool rememberMe = false;
   String? _selectedSemestre;
-  int? _avatarColorIndex;
-
-  static const _avatarColors = [
-    Colors.blueAccent,
-    Colors.teal,
-    Colors.deepPurpleAccent,
-    Colors.pink,
-    Colors.orange,
-  ];
+  File? _avatarImageFile;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final _nombreController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _controlNumberController = TextEditingController();
+  final _telefonoController = TextEditingController();
   String? _confirmPasswordError;
 
   @override
@@ -442,6 +452,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _controlNumberController.dispose();
+    _telefonoController.dispose();
     super.dispose();
   }
 
@@ -449,18 +460,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _confirmPasswordError =
           (_confirmPasswordController.text.isNotEmpty &&
-                  _passwordController.text !=
-                      _confirmPasswordController.text)
+                  _passwordController.text != _confirmPasswordController.text)
               ? 'Las contraseñas no coinciden'
               : null;
     });
   }
 
-  void _registrarUsuario() {
-    // Validar que los campos no estén vacíos
+  Future<String?> _uploadAvatar(String userId, File imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+      final avatarRef = storageRef.child('avatars/$userId.jpg');
+      await avatarRef.putFile(imageFile);
+      return await avatarRef.getDownloadURL();
+    } catch (e) {
+      print("Error uploading avatar: $e");
+      return null;
+    }
+  }
+
+  void _registrarUsuario() async {
     if (_nombreController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
+        _controlNumberController.text.isEmpty ||
+        _telefonoController.text.isEmpty ||
+        _selectedSemestre == null ||
         _confirmPasswordError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -472,84 +496,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final String password = _passwordController.text;
-    // Corregido: Usa BCrypt.hashpw (sincrónico)
     final String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+    final now = DateTime.now();
+    final formattedDate = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
 
-    final nuevoUsuario = Usuario(
-      id: (usuariosNotifier.value.length + 1).toString(),
-      nombre: _nombreController.text,
-      rol: 'Operador', // Rol por defecto
-      email: _emailController.text,
-      passwordHash: hashedPassword,
-      activo: true,
-      ultimoAcceso: DateTime.now(),
-    );
+    try {
+      final db = FirebaseFirestore.instance;
+      final counterRef = db.collection('counters').doc('user_counter');
 
-    // Actualiza el ValueNotifier para notificar a los oyentes
-    final currentUsers = List<Usuario>.from(usuariosNotifier.value);
-    currentUsers.add(nuevoUsuario);
-    usuariosNotifier.value = currentUsers;
+      String newUserId = '';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('¡Cuenta creada exitosamente!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+      await db.runTransaction((transaction) async {
+        final counterSnapshot = await transaction.get(counterRef);
+        int newIdNumber = 1;
+        if (counterSnapshot.exists) {
+          newIdNumber = counterSnapshot.data()!['lastId'] + 1;
+        }
+        
+        newUserId = 'U${newIdNumber.toString().padLeft(3, '0')}';
+        final newUserRef = db.collection('usuarios').doc(newUserId);
+        String? avatarUrl;
 
-    Navigator.pop(context);
+        if (_avatarImageFile != null) {
+            avatarUrl = await _uploadAvatar(newUserId, _avatarImageFile!);
+        }
+
+        final newUser = {
+          'nombre': _nombreController.text,
+          'correo': _emailController.text,
+          'passwordHash': hashedPassword,
+          'numeroControl': _controlNumberController.text,
+          'numero': _telefonoController.text,
+          'semestre': int.tryParse(_selectedSemestre!) ?? 1,
+          'rol': 'Operador',
+          'activo': true,
+          'fechaRegistro': formattedDate,
+          'ultimoAcceso': formattedDate,
+          'avatarUrl': avatarUrl, // Add avatar url
+        };
+        
+        transaction.set(newUserRef, newUser);
+        transaction.set(counterRef, {'lastId': newIdNumber});
+      });
+
+      if (rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Cuenta creada exitosamente!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      if (rememberMe) {
+         Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pop(context);
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al crear la cuenta: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
-  void _pickAvatar() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF101725),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Elige un color de avatar',
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(_avatarColors.length, (i) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _avatarColorIndex = i);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Avatar actualizado'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: _avatarColors[i],
-                      shape: BoxShape.circle,
-                      border: _avatarColorIndex == i
-                          ? Border.all(color: Colors.white, width: 3)
-                          : null,
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
+  Future<void> _pickAvatar() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _avatarImageFile = File(image.path);
+      });
+    }
   }
 
   void _showTermsDialog(BuildContext ctx) {
@@ -577,10 +603,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final avatarColor = _avatarColorIndex != null
-        ? _avatarColors[_avatarColorIndex!]
-        : Colors.white24;
-
     return AuthScaffold(
       title: 'Crear cuenta',
       icon: Icons.person,
@@ -594,15 +616,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: avatarColor,
-                    child: _avatarColorIndex == null
+                    backgroundColor: Colors.white24,
+                    backgroundImage: _avatarImageFile != null ? FileImage(_avatarImageFile!) : null,
+                    child: _avatarImageFile == null
                         ? const Icon(Icons.camera_alt,
                             size: 40, color: Colors.white70)
-                        : const Text('TU',
-                            style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -652,6 +671,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           FadeInSlide(
             delay: const Duration(milliseconds: 400),
             child: TextField(
+              controller: _telefonoController, 
               decoration: inputDecoration('Número de Teléfono', Icons.phone),
               keyboardType: TextInputType.phone,
             ),
@@ -686,8 +706,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             delay: const Duration(milliseconds: 700),
             child: TextField(
               controller: _passwordController,
-              obscureText: true,
-              decoration: inputDecoration('Contraseña', Icons.lock),
+              obscureText: _obscurePassword,
+              decoration: inputDecoration('Contraseña', Icons.lock).copyWith(
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -700,7 +725,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             delay: const Duration(milliseconds: 800),
             child: TextField(
               controller: _confirmPasswordController,
-              obscureText: true,
+              obscureText: _obscureConfirmPassword,
               decoration: inputDecoration('Confirmar contraseña', Icons.lock)
                   .copyWith(
                 errorText: _confirmPasswordError,
@@ -709,12 +734,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.orangeAccent),
                 ),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 15),
-          FadeInSlide(
+           FadeInSlide(
             delay: const Duration(milliseconds: 900),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: rememberMe,
+                  onChanged: (v) => setState(() => rememberMe = v!),
+                ),
+                const Text('Recordar sesión'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 15),
+          FadeInSlide(
+            delay: const Duration(milliseconds: 1000),
             child: Row(
               children: [
                 Checkbox(
@@ -744,7 +786,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 20),
           FadeInSlide(
-            delay: const Duration(milliseconds: 1000),
+            delay: const Duration(milliseconds: 1100),
             child: ElevatedButton(
               onPressed: acceptedTerms ? _registrarUsuario : null,
               style: buttonStyle(),
@@ -756,7 +798,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 12),
           FadeInSlide(
-            delay: const Duration(milliseconds: 1100),
+            delay: const Duration(milliseconds: 1200),
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: buttonStyle().copyWith(
@@ -1086,8 +1128,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() {
       _confirmPasswordError =
           (_confirmPasswordController.text.isNotEmpty &&
-                  _passwordController.text !=
-                      _confirmPasswordController.text)
+                  _passwordController.text != _confirmPasswordController.text)
               ? 'Las contraseñas no coinciden'
               : null;
     });
@@ -1143,8 +1184,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   child: const Text('Atrás'),
                 ),
                 ElevatedButton(
-                  onPressed: () =>
-                      Navigator.popUntil(context, (r) => r.isFirst),
+                  onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
                   style: buttonStyle(),
                   child: const Text('Restablecer'),
                 ),

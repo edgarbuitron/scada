@@ -2,7 +2,7 @@ name: analytics_dashboard
 description: Analytics Reportes Dashboard independiente
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+5
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -25,9 +25,12 @@ dependencies:
   pdf: ^3.10.8
   printing: ^5.11.1
   bcrypt: ^1.2.0
-  flutter_bcrypt: ^1.0.8
   firebase_core: ^4.9.0
   cloud_firestore: ^6.4.1
+  image_picker: ^1.2.2
+  firebase_storage: ^13.4.1
+  intl: ^0.20.2
+  connectivity_plus: ^7.1.1
 
 dev_dependencies:
   flutter_test:
@@ -38,9 +41,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: assets/logo.png
+  image_path: "assets/logo.png"
 
 flutter:
   uses-material-design: true
   assets:
+    - assets/
     - assets/logo.png
