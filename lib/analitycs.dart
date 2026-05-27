@@ -228,6 +228,8 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
                   onDateTap: _pickDateRange,
                   selectedDateRange: _selectedDateRange,
                   maqueta: _sections[_selectedSectionIndex], 
+                  data: _currentDisplayData,
+                  dateLabels: _dateLabels,
                 ),
                 SizedBox(height: r.scale(24)),
                 _SectionTabs(
@@ -261,12 +263,16 @@ class _DashboardHeader extends StatelessWidget {
   final VoidCallback onDateTap;
   final DateTimeRange selectedDateRange;
   final String maqueta;
+  final StationAnalyticsData data;
+  final List<String> dateLabels;
 
   const _DashboardHeader({
     required this.r,
     required this.onDateTap,
     required this.selectedDateRange,
     required this.maqueta,
+    required this.data,
+    required this.dateLabels,
   });
 
   @override
@@ -275,6 +281,8 @@ class _DashboardHeader extends StatelessWidget {
       r: r,
       maqueta: maqueta,
       dateRange: selectedDateRange,
+      data: data,
+      dateLabels: dateLabels,
     );
 
     if (r.isSmall) {
@@ -529,11 +537,15 @@ class _GenerateReportButton extends StatelessWidget {
   final R r;
   final String maqueta;
   final DateTimeRange dateRange;
+  final StationAnalyticsData data;
+  final List<String> dateLabels;
 
   const _GenerateReportButton({
     required this.r,
     required this.maqueta,
     required this.dateRange,
+    required this.data,
+    required this.dateLabels,
   });
 
   @override
@@ -543,10 +555,12 @@ class _GenerateReportButton extends StatelessWidget {
         showDialog(
           context: context,
           barrierDismissible: true,
-          barrierColor: Colors.black.withOpacity(0.7),
+          barrierColor: Colors.black.withValues(alpha: 0.7),
           builder: (_) => GenerarReporteDialog(
             maqueta: maqueta,
             dateRange: dateRange,
+            data: data,
+            dateLabels: dateLabels,
           ),
         );
       },
