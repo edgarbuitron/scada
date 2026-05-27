@@ -54,7 +54,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
   // --- Variables de Estado ---
   String _clock = '';
   late Timer _clockTimer;
-  String _role = 'Ingeniero';
+  final String _role = 'Ingeniero';
   String _mode = 'manual';
   bool _isCycleRunning = false;
   int _piezas = 0;
@@ -307,7 +307,7 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
    Widget _buildPiezasInput() => Row(mainAxisSize: MainAxisSize.min, children: [
       const Text("Piezas:", style: TextStyle(color: kText, fontSize: 12)),
       const SizedBox(width: 8),
-      SizedBox(width: 60, height: 38, child: TextField(controller: _piezasController, enabled: _mode == 'auto', keyboardType: TextInputType.number, inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly], textAlign: TextAlign.center, style: TextStyle(color: _mode == 'auto' ? kMachine : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold), decoration: InputDecoration(filled: true, fillColor: kBg, contentPadding: const EdgeInsets.symmetric(vertical: 8.0), border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kMachine, width: 2)), disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: kBorder))))),
+      SizedBox(width: 60, height: 38, child: TextField(controller: _piezasController, enabled: _mode == 'auto', keyboardType: TextInputType.number, inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly], textAlign: TextAlign.center, style: TextStyle(color: _mode == 'auto' ? kMachine : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold), decoration: InputDecoration(filled: true, fillColor: kBg, contentPadding: const EdgeInsets.symmetric(vertical: 8.0), border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kMachine, width: 2)), disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kBorder))))),
     ],);
 
   Widget _labeledSelect(String lbl, String val, Map<String, String> items, ValueChanged<String?> fn) => Row(mainAxisSize: MainAxisSize.min, children: [
@@ -316,27 +316,91 @@ class _ScadaMaquinadosDashboardState extends State<ScadaMaquinadosDashboard> {
         Container(padding: const EdgeInsets.symmetric(horizontal: 8), decoration: BoxDecoration(color: kBg, border: Border.all(color: kMachine), borderRadius: BorderRadius.circular(4)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: val, dropdownColor: kPanel, style: const TextStyle(color: kMachine, fontSize: 12), icon: const Icon(Icons.arrow_drop_down, color: kMachine, size: 18), isDense: true, items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(), onChanged: fn))),
       ]);
 
-  Widget _kpiBox(String label, String value, Color color) => Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: color.withOpacity(0.08), border: Border.all(color: color), borderRadius: BorderRadius.circular(6)), child: Column(mainAxisSize: MainAxisSize.min, children: [ Text(label, style: const TextStyle(color: kText, fontSize: 10)), const SizedBox(height: 2), Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold))]),);
+  Widget _kpiBox(String label, String value, Color color) => Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: color.withValues(alpha: 0.08), border: Border.all(color: color), borderRadius: BorderRadius.circular(6)), child: Column(mainAxisSize: MainAxisSize.min, children: [ Text(label, style: const TextStyle(color: kText, fontSize: 10)), const SizedBox(height: 2), Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold))]),);
 
   Widget _buildDigitalTwin() => _panel(title: 'Gemelo Digital 2D  ·  Línea Indexada', titleColor: kMachine, height: 230, child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: SizedBox(width: 900, height: 170, child: Stack(children: [ _dtBand('M1\nEntrada', _act('M1').on, left: 10, top: 100, w: 100), _dtSensorDot('P1', _sensor('P1').active, left: 50, top: 80), _dtPusher('M2\nEmpujador 1', _act('M2').on, left: 120, top: 50), _dtSensorDot('R1', _sensor('R1').active, left: 155, top: 30), _dtBand('M3\nBanda 2', _act('M3').on, left: 210, top: 100, w: 110), _dtSensorDot('P2', _sensor('P2').active, left: 255, top: 80), _dtMachine('M4\nFresadora', _act('M4').on, left: 330, top: 30), _dtSensorDot('P3', _sensor('P3').active, left: 372, top: 80), _dtBand('M6\nBanda 3', _act('M6').on, left: 440, top: 100, w: 100), _dtMachine('M5\nTaladradora', _act('M5').on, left: 550, top: 30), _dtSensorDot('P4', _sensor('P4').active, left: 592, top: 80), _dtPusher('M7\nEmpujador 2', _act('M7').on, left: 660, top: 50), _dtSensorDot('R2', _sensor('R2').active, left: 695, top: 30), _dtBand('M8\nSalida', _act('M8').on, left: 760, top: 100, w: 100), _dtSensorDot('P5', _sensor('P5').active, left: 805, top: 80), Positioned(left: 10, top: 130, right: 10, child: Container(height: 2, color: kBorder)), const Positioned(left: 420, top: 126, child: Icon(Icons.arrow_forward, color: kMachine, size: 18))]))));
 
-  Widget _dtBand(String label, bool active, {required double left, required double top, double w = 80}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: w, height: 40, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withOpacity(0.2) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 1.5), borderRadius: BorderRadius.circular(4), boxShadow: active ? [BoxShadow(color: kMachine.withOpacity(0.4), blurRadius: 8)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withOpacity(0.4), fontSize: 9, fontWeight: FontWeight.bold))));
+  Widget _dtBand(String label, bool active, {required double left, required double top, double w = 80}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: w, height: 40, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withValues(alpha: 0.2) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 1.5), borderRadius: BorderRadius.circular(4), boxShadow: active ? [BoxShadow(color: kMachine.withValues(alpha: 0.4), blurRadius: 8)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withValues(alpha: 0.4), fontSize: 9, fontWeight: FontWeight.bold))));
 
-  Widget _dtMachine(String label, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: 80, height: 70, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withOpacity(0.15) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 2), borderRadius: BorderRadius.circular(6), boxShadow: active ? [BoxShadow(color: kMachine.withOpacity(0.5), blurRadius: 12)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withOpacity(0.4), fontSize: 9, fontWeight: FontWeight.bold))));
+  Widget _dtMachine(String label, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: 80, height: 70, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withValues(alpha: 0.15) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 2), borderRadius: BorderRadius.circular(6), boxShadow: active ? [BoxShadow(color: kMachine.withValues(alpha: 0.5), blurRadius: 12)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withValues(alpha: 0.4), fontSize: 9, fontWeight: FontWeight.bold))));
 
-  Widget _dtPusher(String label, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: 55, height: 55, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withOpacity(0.15) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 1.5), borderRadius: BorderRadius.circular(4), boxShadow: active ? [BoxShadow(color: kMachine.withOpacity(0.4), blurRadius: 8)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withOpacity(0.4), fontSize: 8, fontWeight: FontWeight.bold))));
+  Widget _dtPusher(String label, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 300), width: 55, height: 55, alignment: Alignment.center, decoration: BoxDecoration(color: active ? kMachine.withValues(alpha: 0.15) : const Color(0xFF1A2233), border: Border.all(color: active ? kMachine : const Color(0xFF334455), width: 1.5), borderRadius: BorderRadius.circular(4), boxShadow: active ? [BoxShadow(color: kMachine.withValues(alpha: 0.4), blurRadius: 8)] : null), child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: active ? kMachine : kText.withValues(alpha: 0.4), fontSize: 8, fontWeight: FontWeight.bold))));
 
-  Widget _dtSensorDot(String id, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 200), width: 24, height: 24, alignment: Alignment.center, decoration: BoxDecoration(shape: BoxShape.circle, color: active ? kGreen.withOpacity(0.2) : Colors.transparent, border: Border.all(color: active ? kGreen : const Color(0xFF334455)), boxShadow: active ? [BoxShadow(color: kGreen.withOpacity(0.7), blurRadius: 8)] : null), child: Text(id, style: TextStyle(color: active ? kGreen : const Color(0xFF546E7A), fontSize: 7, fontWeight: FontWeight.bold))));
+  Widget _dtSensorDot(String id, bool active, {required double left, required double top}) => Positioned(left: left, top: top, child: AnimatedContainer(duration: const Duration(milliseconds: 200), width: 24, height: 24, alignment: Alignment.center, decoration: BoxDecoration(shape: BoxShape.circle, color: active ? kGreen.withValues(alpha: 0.2) : Colors.transparent, border: Border.all(color: active ? kGreen : const Color(0xFF334455)), boxShadow: active ? [BoxShadow(color: kGreen.withValues(alpha: 0.7), blurRadius: 8)] : null), child: Text(id, style: TextStyle(color: active ? kGreen : const Color(0xFF546E7A), fontSize: 7, fontWeight: FontWeight.bold))));
 
   Widget _buildRow2() => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [ SizedBox(width: 220, child: _buildSensorsPanel()), const SizedBox(width: 10), SizedBox(width: 240, child: _buildActuatorsPanel()), const SizedBox(width: 10), Expanded(child: _buildAuditPanel()) ]);
 
   Widget _buildSensorsPanel() => _panel(title: 'Sensores (7)', child: Column(mainAxisSize: MainAxisSize.min, children: _sensors.map((s) => _sensorRow(s)).toList()));
 
-  Widget _sensorRow(SensorModel s) { final color = s.active ? kGreen : const Color(0xFF333333); return GestureDetector(onTap: () => _toggleSensor(s.id), child: Container(margin: const EdgeInsets.symmetric(vertical: 3), padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), decoration: BoxDecoration(color: s.active ? kGreen.withOpacity(0.07) : Colors.black.withOpacity(0.3), border: Border.all(color: s.active ? kGreen.withOpacity(0.4) : kBorder), borderRadius: BorderRadius.circular(4)), child: Row(children: [ Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color, boxShadow: s.active ? [BoxShadow(color: color.withOpacity(0.8), blurRadius: 6)] : null)), const SizedBox(width: 8), Expanded(child: Text('${s.id}: ${s.label}', style: TextStyle(color: s.active ? kText : kText, fontSize: 11))) ]))); }
+  Widget _sensorRow(SensorModel s) {
+    final Color color = s.active ? kGreen : const Color(0xFF333333);
+    return GestureDetector(
+        onTap: () => _toggleSensor(s.id),
+        child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+                color: s.active
+                    ? kGreen.withValues(alpha: 0.07)
+                    : Colors.black.withValues(alpha: 0.3),
+                border: Border.all(
+                    color: s.active ? kGreen.withValues(alpha: 0.4) : kBorder),
+                borderRadius: BorderRadius.circular(4)),
+            child: Row(children: [
+              Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                      boxShadow: s.active
+                          ? [
+                              BoxShadow(
+                                  color: color.withValues(alpha: 0.8),
+                                  blurRadius: 6)
+                            ]
+                          : null)),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text('${s.id}: ${s.label}',
+                      style: const TextStyle(color: kText, fontSize: 11)))
+            ])));
+  }
 
-  Widget _buildActuatorsPanel() => _panel(title: 'Actuadores (M1–M8)', child: Column(mainAxisSize: MainAxisSize.min, children: _actuators.map(_actuatorRow).toList()));
+  Widget _buildActuatorsPanel() => _panel(
+      title: 'Actuadores (M1–M8)',
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _actuators.map(_actuatorRow).toList()));
 
-  Widget _actuatorRow(ActuatorModel a) => Container(margin: const EdgeInsets.symmetric(vertical: 3), padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: a.on ? kMachine.withOpacity(0.07) : Colors.black.withOpacity(0.3), border: Border.all(color: a.on ? kMachine.withOpacity(0.5) : kBorder), borderRadius: BorderRadius.circular(4)), child: Row(children: [ Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ Text(a.id, style: TextStyle(color: a.on ? kMachine : kText, fontSize: 11, fontWeight: FontWeight.bold)), Text(a.description, style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9)) ])), Transform.scale(scale: 0.7, child: Switch(value: a.on, onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v), activeThumbColor: kMachine, inactiveTrackColor: const Color(0xFF333333))) ]));
+  Widget _actuatorRow(ActuatorModel a) => Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+          color: a.on ? kMachine.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.3),
+          border: Border.all(color: a.on ? kMachine.withValues(alpha: 0.5) : kBorder),
+          borderRadius: BorderRadius.circular(4)),
+      child: Row(children: [
+        Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(a.id,
+                  style: TextStyle(
+                      color: a.on ? kMachine : kText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold)),
+              Text(a.description,
+                  style: const TextStyle(color: Color(0xFF546E7A), fontSize: 9))
+            ])),
+        Transform.scale(
+            scale: 0.7,
+            child: Switch(
+                value: a.on,
+                onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v),
+                activeThumbColor: kMachine,
+                inactiveTrackColor: const Color(0xFF333333)))
+      ]));
 
   Widget _buildAuditPanel() => _panel(title: 'Auditoría (Audit Trail) y Alertas', child: Container(height: 250, decoration: BoxDecoration(color: kBg, border: Border.all(color: kBorder), borderRadius: BorderRadius.circular(4)), padding: const EdgeInsets.all(8), child: ListView.builder(controller: _logScroll, itemCount: _logs.length, itemBuilder: (_, i) { final l = _logs[i]; return Padding(padding: const EdgeInsets.only(bottom: 2), child: RichText(text: TextSpan(style: const TextStyle(fontSize: 11, fontFamily: 'monospace'), children: [ TextSpan(text: '[${l.time}] ', style: const TextStyle(color: Color(0xFF546E7A))), TextSpan(text: '[${l.user}] - ', style: const TextStyle(color: kMachine)), TextSpan(text: l.message, style: TextStyle(color: l.color)) ]))); })));
 

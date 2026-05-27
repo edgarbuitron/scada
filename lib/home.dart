@@ -2,15 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'login.dart';
-import 'nube.dart' show NubeScreen;
+import 'nube.dart' show CloudSyncDashboard;
 import 'analitycs.dart' show AnalyticsDashboard;
 import 'usuarios.dart' show UsuariosScreen;
 // CORRECCIÓN: El nombre correcto de la clase en el archivo es LogsScreen
 import 'historialylogs.dart' show LogsScreen; 
 import 'conexiones_tablas.dart' show ConexionesScreen;
 import 'diagnostico_conexiones.dart' show DiagnosticoScreen;
-import 'scada_neumatico.dart' show ScadaNeumaticoScreen;
+import 'scada_neumatico.dart' show ScadaNeumaticoBoard;
 import 'main_robot_3_ejes.dart' show ScadaRobotDashboard;
 import 'main_maquinados.dart' show ScadaMaquinadosDashboard;
 import 'main_prensado.dart' show ScadaPrensadoScreen;
@@ -46,7 +45,7 @@ enum AppView {
   maquinado,
   prensado,
   conexiones,
-  diagnostico_conexiones,
+  diagnosticoConexiones,
   historial,
   usuarios,
   nube,
@@ -61,19 +60,12 @@ class ScadaMasterHome extends StatefulWidget {
 
 class _ScadaMasterHomeState extends State<ScadaMasterHome> {
   AppView _view = AppView.dashboard;
-  String _clock = '';
   late Timer _clockTimer;
 
   @override
   void initState() {
     super.initState();
-    _updateClock();
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) => setState(_updateClock));
-  }
-
-  void _updateClock() {
-    final n = DateTime.now();
-    _clock = '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
   }
 
   @override
@@ -144,7 +136,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
 
         _sectionLabel('SISTEMA', compact),
         _navTile('🔌', 'Conexiones', AppView.conexiones, kTeal, compact),
-        _navTile('💻', 'Diagnóstico de Conexiones', AppView.diagnostico_conexiones, const Color.fromARGB(255, 58, 145, 226), compact),
+        _navTile('💻', 'Diagnóstico de Conexiones', AppView.diagnosticoConexiones, const Color.fromARGB(255, 58, 145, 226), compact),
         _navTile('📋', 'Historial / Logs', AppView.historial, kOrange, compact),
         _navTile('👥', 'Usuarios', AppView.usuarios, kPink, compact),
         _navTile('☁️', 'Cloud Sync', AppView.nube, kCyan, compact),
@@ -166,7 +158,7 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
-        color: active ? col.withOpacity(0.12) : Colors.transparent,
+        color: active ? col.withValues(alpha: 0.12) : Colors.transparent,
         border: Border(left: BorderSide(color: active ? col : Colors.transparent, width: 3)),
       ),
       child: InkWell(
@@ -201,16 +193,16 @@ class _ScadaMasterHomeState extends State<ScadaMasterHome> {
   Widget _buildView() {
     switch (_view) {
       case AppView.dashboard: return const AnalyticsDashboard();
-      case AppView.neumatico: return const ScadaNeumaticoScreen();
+      case AppView.neumatico: return const ScadaNeumaticoBoard();
       case AppView.robot: return const ScadaRobotDashboard();
       case AppView.maquinado: return const ScadaMaquinadosDashboard();
       case AppView.prensado: return const ScadaPrensadoScreen();
       case AppView.conexiones: return const ConexionesScreen();
-      case AppView.diagnostico_conexiones: return const DiagnosticoScreen();
+      case AppView.diagnosticoConexiones: return const DiagnosticoScreen();
       // CORRECCIÓN FINAL: Usar el nombre de clase correcto que es LogsScreen
       case AppView.historial: return const LogsScreen(); 
       case AppView.usuarios: return const UsuariosScreen();
-      case AppView.nube: return const NubeScreen();
+      case AppView.nube: return const CloudSyncDashboard();
       case AppView.chatbot: return Container(); // Placeholder
     }
   }

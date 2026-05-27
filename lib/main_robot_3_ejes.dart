@@ -1,329 +1,798 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
-
-// --- Importar el servicio de Firebase ---
+import 'package:flutter/services.dart';
 import 'firebase_service.dart';
 
-// ── Paleta de Colores y Estilos ──────────────────────────────────
-const Color kBgDark = Color(0xFF0A0E1A);
-const Color kPanel = Color(0xFF141A2E);
-const Color kAccent = Color(0xFF8A2BE2); // Violeta azulado
-const Color kGreen = Color(0xFF32CD32);
-const Color kRed = Color(0xFFDC143C);
-const Color kBorder = Color(0xFF2D3B59);
-const Color kText = Colors.white;
-const Color kMuted = Colors.white60;
 
-// ── Modelos ───────────────────────────────────────────────
-enum _Axis { X, Y, Z }
+// ── Paleta Unificada (Basada en Neumático) ──────────────────────────────────
+const Color kBg = Color(0xFF081014);
+const Color kPanel = Color(0xFF11222C);
+const Color kMachine = Color(0xFF00EAFF); // Color principal de acento (antes era kRed)
+const Color kGreen = Color(0xFF00FF88);
+const Color kRed = Color(0xFFFF3366);
+const Color kBorder = Color(0xFF1A3644);
+const Color kText = Color(0xFFC5D1D8);
+const Color kAudit = Color(0xFFFFAA00);
+const Color kDark = Color(0xFF0C1820);
 
-enum _RLogType { info, audit, error, success }
+class ScadaRobot3EjesScreen extends StatelessWidget {
+  const ScadaRobot3EjesScreen({super.key});
 
-class _RLogEntry {
-  final String time, message;
-  final _RLogType type;
-  const _RLogEntry(this.time, this.message, this.type);
-
-  Color get color {
-    switch (type) {
-      case _RLogType.error: return kRed;
-      case _RLogType.audit: return kAccent;
-      case _RLogType.success: return kGreen;
-      default: return kText;
-    }
+  @override
+  Widget build(BuildContext context) {
+    return const ScadaRobotDashboard();
   }
 }
 
-// ── Pantalla Principal ─────────────────────────────────
+// ── Modelos ───────────────────────────────────────────────
+enum LogType { info, audit, error, success }
+
+class LogEntry {
+  final String time, user, message;
+  final LogType type;
+  const LogEntry(this.time, this.user, this.message, this.type);
+  Color get color => type == LogType.error
+      ? kRed
+      : type == LogType.audit
+      ? kAudit
+      : type == LogType.success
+      ? kGreen
+      : kText;
+}
+
+class SensorModel {
+  final String id, label, description;
+  bool active;
+  int pulseCount;
+  SensorModel(this.id, this.label, this.description,
+      {this.active = false, this.pulseCount = 0});
+}
+
+class ActuatorModel {
+  final String id, label, description;
+  bool on;
+  bool disabled;
+  ActuatorModel(this.id, this.label, this.description,
+      {this.on = false, this.disabled = false});
+}
+
+// ── Secuencia del robot (TM3DR24-A)
+const List<String> kEstados = [
+  'Sin iniciar',
+  'EST1 · Girando base (CW) a posición objetivo',
+  'EST2 · Expandiendo brazo gripper',
+  'EST3 · Eje Z bajando a posición de agarre',
+  'EST4 · Cerrando gripper · Tomando pieza',
+  'EST5 · Eje Z subiendo con pieza',
+  'EST6 · Girando base (CCW) a posición destino',
+  'EST7 · Eje Z bajando · Depositando pieza',
+  'EST8 · Abriendo gripper · Liberando pieza',
+];
+
+// ── Dashboard ─────────────────────────────────────────────
 class ScadaRobotDashboard extends StatefulWidget {
   const ScadaRobotDashboard({super.key});
   @override
-  State<ScadaRobotDashboard> createState() => _ScadaRobotDashboardState();
+  State<ScadaRobotDashboard> createState() => _ScadaDashboardState();
 }
 
-class _ScadaRobotDashboardState extends State<ScadaRobotDashboard> {
-  // --- Servicio de Firebase y ID de Maqueta ---
+class _ScadaDashboardState extends State<ScadaRobotDashboard>
+    with SingleTickerProviderStateMixin {
+  // --- Servicio de Firebase ---
   final FirebaseService _firebaseService = FirebaseService();
-  final String _maquetaId = 'robot_3_ejes';
+  final String _maquetaId = 'robot';
 
-  // --- Estado del Robot ---
-  Map<String, double> _pos = {'X': 0, 'Y': 0, 'Z': 0};
-  Map<String, bool> _limitSwitches = {'X0': true, 'X1': false, 'Y0': true, 'Y1': false, 'Z0': true, 'Z1': false};
-  bool _gripper = false;
-  bool _isCycleRunning = false;
+  String _clock = '';
+  late Timer _clockTimer;
+  late AnimationController _rotAnim;
+  Timer? _pulseTimer;
+
+  String _role = 'Ingeniero';
   String _mode = 'manual';
+
+  bool _isCycleRunning = false;
+  int _currentState = 0;
   int _piezas = 0;
-  final List<_RLogEntry> _logs = [];
+
+  final TextEditingController _piezasController = TextEditingController(text: '1');
+
+  double _baseAngle = 0;
+  double _armExtend = 0;
+  double _zPosition = 0;
+  bool _gripperClosed = false;
+
+  final List<SensorModel> _sensors = [
+    SensorModel('S2', 'Encoder XY', 'Encoder CH-X,Y base giratoria'),
+    SensorModel('S3', 'Ref Base', 'Posición referencia base giratoria'),
+    SensorModel('S4', 'Cnt Brazo', 'Contador pulsos brazo gripper'),
+    SensorModel('S6', 'Ref Eje Z', 'Posición referencia eje vertical Z'),
+    SensorModel('S7', 'Enc Eje Z', 'Encoder CH-X,Y eje vertical'),
+    SensorModel('S8', 'Ref Grip', 'Posición referencia gripper'),
+  ];
+
+  final List<ActuatorModel> _actuators = [
+    ActuatorModel('RLY01', 'RLY01', 'Base giratoria → CW (horario)'),
+    ActuatorModel('RLY02', 'RLY02', 'Base giratoria → CCW (antihorario)'),
+    ActuatorModel('RLY03', 'RLY03', 'Expandir brazo gripper'),
+    ActuatorModel('RLY04', 'RLY04', 'Retraer brazo gripper'),
+    ActuatorModel('RLY05', 'RLY05', 'Eje vertical Z → Posición arriba'),
+    ActuatorModel('RLY06', 'RLY06', 'Eje vertical Z → Posición abajo'),
+    ActuatorModel('RLY07', 'RLY07', 'Abrir gripper'),
+    ActuatorModel('RLY08', 'RLY08', 'Cerrar gripper'),
+  ];
+
+  final List<LogEntry> _logs = [];
   final ScrollController _logScroll = ScrollController();
+
+  SensorModel _sensor(String id) => _sensors.firstWhere((s) => s.id == id);
+  ActuatorModel _act(String id) => _actuators.firstWhere((a) => a.id == id);
+  bool get _btnAutoEnabled => _mode == 'auto' && !_isCycleRunning;
 
   @override
   void initState() {
     super.initState();
     _firebaseService.initializeMaqueta(_maquetaId);
-    _log('Sistema Robot 3 Ejes TMINL24-C inicializado.', _RLogType.info);
+    _updateClock();
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if(mounted) setState(_updateClock);
+    });
+    _rotAnim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _logAudit('Sistema iniciado · Robot 3 Ejes TM3DR24-A', LogType.info);
+    _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
+    _resetToHome(log: false);
+  }
+
+  void _updateClock() {
+    final n = DateTime.now();
+    _clock =
+    '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
   }
 
   @override
   void dispose() {
+    _clockTimer.cancel();
+    _pulseTimer?.cancel();
     _logScroll.dispose();
+    _rotAnim.dispose();
+    _piezasController.dispose();
     super.dispose();
   }
 
-  // --- Lógica del SCADA ---
-  void _log(String msg, _RLogType type) {
-    final t = DateTime.now();
-    final timeStr = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:${t.second.toString().padLeft(2, '0')}';
-    if (mounted) {
-      setState(() => _logs.insert(0, _RLogEntry(timeStr, msg, type)));
+  void _logAudit(String msg, LogType type) {
+    final n = DateTime.now();
+    final t =
+        '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}:${n.second.toString().padLeft(2, '0')}';
+    if(mounted) {
+      setState(() => _logs.add(LogEntry(t, _role, msg, type)));
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_logScroll.hasClients) _logScroll.jumpTo(0);
+        if (_logScroll.hasClients) {
+          _logScroll.animateTo(_logScroll.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        }
       });
 
-      // --- Traducción y guardado en Firebase ---
       String logTypeForHistory;
       switch (type) {
-        case _RLogType.error: logTypeForHistory = 'Critico'; break;
-        case _RLogType.audit: logTypeForHistory = 'Advertencia'; break;
+        case LogType.error: logTypeForHistory = 'Critico'; break;
+        case LogType.audit: logTypeForHistory = 'Advertencia'; break;
         default: logTypeForHistory = 'Info';
       }
-      _firebaseService.guardarLog(_maquetaId, {
-        'role': 'Operador', // Rol fijo para este ejemplo
-        'message': msg,
-        'type': logTypeForHistory,
-      });
+
+      _firebaseService.guardarLog(_maquetaId, {'role': _role, 'message': msg, 'type': logTypeForHistory});
     }
   }
 
-  void _setMode(String? newMode) {
-    if (newMode == null || _isCycleRunning) return;
-    setState(() => _mode = newMode);
-    _log('Modo de operación cambiado a: $newMode', _RLogType.audit);
+  void _updatePermissions() {
+    for (final a in _actuators) {
+      a.disabled = (_role == 'Operador' || _mode == 'auto' || _isCycleRunning);
+    }
+    _logAudit('Configuración cambiada a Modo: $_mode', LogType.audit);
   }
 
-  Future<void> _moveAxis(_Axis axis, double target, {bool manual = false}) async {
-    if (_isCycleRunning && manual) return;
-    if (manual) _log('Moviendo Eje ${axis.name} a $target manualmente.', _RLogType.audit);
+  void _toggleSensor(String id) {
+    if (_mode != 'manual') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Cambia el Modo a 'Manual' para simular sensores."),
+        backgroundColor: kAudit,
+      ));
+      return;
+    }
+    final s = _sensor(id);
+    if(mounted) setState(() => s.active = !s.active);
+    _logAudit(
+        'Simulación Manual: Sensor ${s.id} forzado a ${s.active ? 'DETECTANDO' : 'LIBRE'}',
+        LogType.audit);
+    _firebaseService.registrarAccionComponente(_maquetaId, 'sensor_$id');
+  }
 
-    final axisName = axis.name;
-    final initialPos = _pos[axisName]!;
-    final distance = (target - initialPos).abs();
-    final duration = (distance * 10).toInt();
-    final steps = (distance * 20).toInt().clamp(1, 1000);
+  void _toggleActuator(String id, bool val) {
+    if(mounted) {
+      setState(() => _act(id).on = val);
+      _updateRobotVisuals(id, val);
+      if (!_isCycleRunning) {
+        _logAudit('Forzó $id a ${val ? 'ENCENDIDO' : 'APAGADO'}', LogType.audit);
+        _firebaseService.registrarAccionComponente(_maquetaId, 'actuador_$id');
+      }
+    }
+  }
 
-    for (int i = 1; i <= steps; i++) {
-      if ((_isCycleRunning == false && !manual) || !mounted) break;
-      await Future.delayed(Duration(milliseconds: duration ~/ steps));
+  void _updateRobotVisuals(String id, bool val) {
+    if(mounted) {
       setState(() {
-        _pos[axisName] = initialPos + (target - initialPos) * (i / steps);
-        // Simulación de switches de límite
-        if (_pos[axisName]! <= 0.1) { _limitSwitches['${axisName}0'] = true; _limitSwitches['${axisName}1'] = false; } 
-        else if (_pos[axisName]! >= 99.9) { _limitSwitches['${axisName}0'] = false; _limitSwitches['${axisName}1'] = true; }
-        else { _limitSwitches['${axisName}0'] = false; _limitSwitches['${axisName}1'] = false; }
+        switch (id) {
+          case 'RLY01': if (val) _baseAngle = (_baseAngle + 45) % 360; break;
+          case 'RLY02': if (val) _baseAngle = (_baseAngle - 45 + 360) % 360; break;
+          case 'RLY03': _armExtend = val ? 1.0 : _armExtend; break;
+          case 'RLY04': _armExtend = val ? 0.0 : _armExtend; break;
+          case 'RLY05': _zPosition = val ? 0.0 : _zPosition; break;
+          case 'RLY06': _zPosition = val ? 1.0 : _zPosition; break;
+          case 'RLY07': _gripperClosed = false; break;
+          case 'RLY08': _gripperClosed = true; break;
+        }
       });
     }
-    if (mounted) setState(() => _pos[axisName] = target);
   }
 
-  Future<void> _toggleGripper(bool open, {bool manual = false}) async {
-    if (_isCycleRunning && manual) return;
-    if (manual) _log('Operando Gripper a ${open ? 'ABIERTO' : 'CERRADO'}', _RLogType.audit);
-    setState(() => _gripper = open);
-    _firebaseService.registrarAccionComponente(_maquetaId, 'gripper_${open ? 'on' : 'off'}');
-    await Future.delayed(const Duration(milliseconds: 500));
-  }
-
-  Future<void> _goToHome({bool log = true}) async {
-    if (_isCycleRunning) return;
-    if (log) _log('Enviando Robot a posición HOME...', _RLogType.audit);
-    await _moveAxis(_Axis.Z, 0);
-    await _moveAxis(_Axis.Y, 0);
-    await _moveAxis(_Axis.X, 0);
-    if (log) {
-      _log('Robot en HOME.', _RLogType.success);
-       _firebaseService.registrarReset(_maquetaId);
+  void _resetToHome({bool log = true}) {
+    if(log) _logAudit('Restableciendo sistema a estado inicial...', LogType.audit);
+    if(mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        for (final a in _actuators) { a.on = false; }
+        for (final s in _sensors) { s.active = false; }
+        _sensor('S3').active = true;
+        _sensor('S6').active = true;
+        _sensor('S8').active = true;
+        _baseAngle = 0;
+        _armExtend = 0;
+        _zPosition = 0;
+        _gripperClosed = false;
+      });
+    }
+    if(log) {
+      _logAudit('Sistema restablecido a la posición HOME.', LogType.success);
+      _firebaseService.registrarReset(_maquetaId);
     }
   }
 
-  void _emergencyStop() {
-    setState(() => _isCycleRunning = false);
-    _log('¡PARO DE EMERGENCIA ACTIVADO!', _RLogType.error);
+  void _triggerEmergency() {
+    if (mounted) {
+      setState(() {
+        _isCycleRunning = false;
+        _currentState = 0;
+        for (final a in _actuators) { a.on = false; }
+      });
+    }
+    _logAudit('¡PARO DE EMERGENCIA ACTIVADO! Todos los actuadores apagados.', LogType.error);
     _firebaseService.registrarParoEmergencia(_maquetaId);
     _firebaseService.registrarAccionComponente(_maquetaId, 'paro_emergencia');
+    if(mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: kPanel,
+          title: const Text('⚠ PARO DE EMERGENCIA', style: TextStyle(color: kRed, fontSize: 15)),
+          content: const Text('Todos los actuadores han sido desactivados.\nRevise el robot antes de reiniciar.', style: TextStyle(color: kText)),
+          actions: [ TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: kMachine))) ],
+        ),
+      );
+    }
   }
 
-  Future<void> _startCycle() async {
+
+  Future<void> _startAutoCycle() async {
     if (_isCycleRunning) return;
-    await _goToHome(log: false);
-    setState(() { _isCycleRunning = true; _piezas = 0; });
-    _log('══ INICIANDO CICLO DE PICK & PLACE ══', _RLogType.info);
-
-    const pickPos = {'X': 80.0, 'Y': 20.0, 'Z': 75.0};
-    const placePos = {'X': 20.0, 'Y': 80.0, 'Z': 75.0};
-
-    for (int i = 1; i <= 5; i++) { // 5 ciclos de ejemplo
+    final int numPiezas = int.tryParse(_piezasController.text) ?? 0;
+    if (numPiezas <= 0) {
+      _logAudit('ERROR: El número de ciclos debe ser mayor a 0.', LogType.error);
+      return;
+    }
+    if(mounted) setState(() { _isCycleRunning = true; _updatePermissions(); });
+    _logAudit('══ INICIANDO CICLO AUTOMÁTICO PARA $numPiezas CICLOS ══', LogType.info);
+    for (int i = 0; i < numPiezas; i++) {
+      if (!_isCycleRunning) break;
+      _logAudit('--- Ejecutando Pick & Place ${i + 1} de $numPiezas ---', LogType.info);
+      await _runSingleCycle();
       if (!_isCycleRunning) {
-        _log('Ciclo interrumpido.', _RLogType.audit);
+        _logAudit('Ciclo interrumpido por PARO DE EMERGENCIA.', LogType.error);
         break;
       }
-      _log('--- Iniciando ciclo #${i} ---', _RLogType.info);
-      // Ir a recoger
-      await _toggleGripper(true); // Abrir gripper
-      await _moveAxis(_Axis.Z, 0);
-      await _moveAxis(_Axis.X, pickPos['X']!);
-      await _moveAxis(_Axis.Y, pickPos['Y']!);
-      await _moveAxis(_Axis.Z, pickPos['Z']!); 
-      await _toggleGripper(false); // Cerrar gripper
-      _log('Pieza recogida de la posición de Pick.', _RLogType.success);
-
-      // Ir a dejar
-      await _moveAxis(_Axis.Z, 0);
-      await _moveAxis(_Axis.X, placePos['X']!);
-      await _moveAxis(_Axis.Y, placePos['Y']!);
-      await _moveAxis(_Axis.Z, placePos['Z']!); 
-      await _toggleGripper(true); // Abrir gripper
-      _log('Pieza dejada en la posición de Place.', _RLogType.success);
-      
-      if (mounted) setState(() => _piezas = i);
-      _firebaseService.incrementarPiezas(_maquetaId);
     }
-    
-    await _goToHome(log: false);
-    setState(() => _isCycleRunning = false);
-    _log('══ CICLO FINALIZADO ══', _RLogType.info);
+    if(mounted) setState(() { _isCycleRunning = false; _currentState = 0; _updatePermissions(); });
+    _logAudit('══ CICLO AUTOMÁTICO FINALIZADO ══', LogType.info);
   }
 
-  // --- Widgets de la UI ---
+  Future<void> _runSingleCycle() async {
+    try {
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 1; _sensor('S3').active = false; });
+      _logAudit('EST1 · RLY01 ON · Base girando CW', LogType.info);
+      _toggleActuator('RLY01', true); await Future.delayed(const Duration(milliseconds: 500));
+      if(mounted) setState(() => _baseAngle = 90); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY01', false);
+      setState(() { _sensor('S3').active = true; _sensor('S2').active = true; });
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 2; _sensor('S4').active = true; });
+      _logAudit('EST2 · RLY03 ON · Expandiendo brazo', LogType.info);
+      _toggleActuator('RLY03', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _armExtend = 1.0); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY03', false);
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 3; _sensor('S6').active = false; });
+      _logAudit('EST3 · RLY06 ON · Eje Z bajando', LogType.info);
+      _toggleActuator('RLY06', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _zPosition = 1.0); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY06', false);
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 4; _sensor('S8').active = false; });
+      _logAudit('EST4 · RLY08 ON · Cerrando gripper', LogType.success);
+      _toggleActuator('RLY08', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _gripperClosed = true); await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY08', false);
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() => _currentState = 5);
+      _logAudit('EST5 · RLY05 ON · Eje Z subiendo', LogType.info);
+      _toggleActuator('RLY05', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _zPosition = 0.0); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY05', false);
+      if(mounted) setState(() => _sensor('S6').active = true);
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 6; _sensor('S3').active = false; });
+      _logAudit('EST6 · RLY02 ON · Base girando CCW', LogType.info);
+      _toggleActuator('RLY02', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _baseAngle = 0); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY02', false);
+      if(mounted) setState(() { _sensor('S3').active = true; _sensor('S2').active = false; });
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() { _currentState = 7; _sensor('S6').active = false; });
+      _logAudit('EST7 · RLY06 ON · Eje Z bajando', LogType.info);
+      _toggleActuator('RLY06', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _zPosition = 1.0); await Future.delayed(const Duration(seconds: 2));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY06', false);
+
+      if (!_isCycleRunning || !mounted) return;
+      setState(() => _currentState = 8);
+      _logAudit('EST8 · RLY07 ON · Abriendo gripper', LogType.success);
+      _toggleActuator('RLY07', true); await Future.delayed(const Duration(milliseconds: 100));
+      if(mounted) setState(() => _gripperClosed = false); await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY07', false);
+      if(mounted) setState(() => _sensor('S8').active = true);
+
+      if (!_isCycleRunning || !mounted) return;
+      _toggleActuator('RLY04', true); if(mounted) setState(() => _armExtend = 0.0);
+      _logAudit('RLY04 ON · Retrayendo brazo', LogType.audit);
+      await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY04', false);
+      _toggleActuator('RLY05', true); if(mounted) setState(() => _zPosition = 0.0);
+      await Future.delayed(const Duration(seconds: 1));
+      if (!_isCycleRunning || !mounted) return; _toggleActuator('RLY05', false);
+      if(mounted) setState(() { _sensor('S6').active = true; _piezas++; });
+      _logAudit('✔ CICLO EXITOSO #$_piezas: Pick & Place completado', LogType.success);
+      _firebaseService.incrementarPiezas(_maquetaId);
+
+    } catch (e) {
+      _logAudit('ERROR en secuencia: $e', LogType.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 900;
     return Scaffold(
-      backgroundColor: kBgDark,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
+      backgroundColor: kBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildTopBar(),
+              const SizedBox(height: 10),
+              _buildRow1(),
+              const SizedBox(height: 10),
+              _buildRow2(),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDesktopLayout() => Column(children: [
-    _buildHeader(),
-    const SizedBox(height: 16),
-    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(flex: 3, child: _buildControlPanel()),
-      const SizedBox(width: 16),
-      Expanded(flex: 2, child: _buildLogPanel()),
-    ])
-  ]);
-
-  Widget _buildMobileLayout() => Column(children: [
-    _buildHeader(),
-    const SizedBox(height: 16),
-    _buildControlPanel(),
-    const SizedBox(height: 16),
-    _buildLogPanel(),
-  ]);
-
-  Widget _buildHeader() => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-    const Text('SCADA: Robot 3 Ejes (Pick & Place)', style: TextStyle(color: kText, fontSize: 20, fontWeight: FontWeight.bold)),
-    _buildModeSelector(),
-  ]);
-
-  Widget _buildModeSelector() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10),
-    decoration: BoxDecoration(color: kPanel, borderRadius: BorderRadius.circular(8)),
-    child: DropdownButton<String>(
-      value: _mode, isDense: true, underline: const SizedBox(),
-      dropdownColor: kPanel, style: const TextStyle(color: kAccent, fontSize: 13),
-      icon: const Icon(Icons.arrow_drop_down, color: kAccent),
-      items: const [ DropdownMenuItem(value: 'manual', child: Text('Modo Manual')), DropdownMenuItem(value: 'auto', child: Text('Modo Automático')) ],
-      onChanged: _setMode,
+  Widget _buildHeader() => Container(
+    padding: const EdgeInsets.only(bottom: 10),
+    decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: kMachine, width: 2))),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('ROBOT 3 EJES', style: TextStyle(color: kMachine, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.4)),
+        ]),
+        Text(_clock, style: const TextStyle(color: kText, fontSize: 14, fontFamily: 'monospace')),
+      ],
     ),
   );
 
-  Widget _buildControlPanel() => Column(children: [
-    _panel(title: 'Posición de Ejes y Gripper', child: _buildAxesStatus()),
-    const SizedBox(height: 16),
-    _panel(title: 'Controles y Ciclo', child: _buildCycleControls()),
-  ]);
+  Widget _buildTopBar() => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+        color: kPanel,
+        border: Border.all(color: kBorder),
+        borderRadius: BorderRadius.circular(8)),
+    child: Wrap(
+      spacing: 14,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _labeledSelect('Modo:', _mode, {
+          'manual': 'Manual (Simulación Física)',
+          'auto': 'Automático',
+        }, (v) {
+          if(mounted) setState(() => _mode = v!);
+          _updatePermissions();
+        }),
+        _buildPiezasInput(),
+        ElevatedButton.icon(
+          onPressed: _btnAutoEnabled ? _startAutoCycle : null,
+          icon: Icon(_isCycleRunning ? Icons.stop_circle_rounded : Icons.smart_toy_rounded, size: 16),
+          label: Text(_isCycleRunning ? 'EJECUTANDO...' : 'INICIAR CICLO'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kGreen,
+            foregroundColor: kBg,
+            disabledBackgroundColor: const Color(0xFF333333),
+            disabledForegroundColor: const Color(0xFF666666),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+        ),
+        ElevatedButton.icon(
+          onPressed: _triggerEmergency,
+          icon: const Icon(Icons.warning_amber_rounded, size: 16),
+          label: const Text('PARO EMERGENCIA'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kRed,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+        ),
+        ElevatedButton.icon(
+          onPressed: _isCycleRunning ? null : () => _resetToHome(),
+          icon: const Icon(Icons.replay_circle_filled_rounded, size: 16),
+          label: const Text('RESTABLECER'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kMachine, // Usar el color principal
+            foregroundColor: Colors.black,
+            disabledBackgroundColor: const Color(0xFF333333),
+            disabledForegroundColor: const Color(0xFF666666),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          ),
+        ),
+        _kpiBox('Ciclos Completados', '$_piezas', kGreen),
+      ],
+    ),
+  );
 
-  Widget _buildAxesStatus() => Column(children: [
-    _axisSlider(_Axis.X), _axisSlider(_Axis.Y), _axisSlider(_Axis.Z),
-    const SizedBox(height: 10),
-    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      _limitSwitchIndicator('X0'), _limitSwitchIndicator('X1'),
-      _limitSwitchIndicator('Y0'), _limitSwitchIndicator('Y1'),
-      _limitSwitchIndicator('Z0'), _limitSwitchIndicator('Z1'),
-      _gripperIndicator(),
-    ]),
-  ]);
-
-  Widget _axisSlider(_Axis axis) {
-    final axisName = axis.name;
-    return Row(children: [
-      Text('Eje $axisName', style: const TextStyle(color: kText, fontWeight: FontWeight.bold, fontSize: 16)),
-      Expanded(
-        child: Slider(
-          value: _pos[axisName]!, min: 0, max: 100,
-          activeColor: kAccent,
-          onChanged: (_mode == 'manual') ? (v) => _moveAxis(axis, v, manual: true) : null,
+  Widget _buildPiezasInput() => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text("Ciclos:", style: TextStyle(color: kText, fontSize: 12)),
+      const SizedBox(width: 8),
+      SizedBox(
+        width: 60,
+        height: 38,
+        child: TextField(
+          controller: _piezasController,
+          enabled: _mode == 'auto',
+          keyboardType: TextInputType.number,
+          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+          textAlign: TextAlign.center,
+          style: TextStyle(color: _mode == 'auto' ? kMachine : Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: kBg,
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: _mode == 'auto' ? kMachine : kBorder)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: kMachine, width: 2)),
+            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: kBorder)),
+          ),
         ),
       ),
-      Text('${_pos[axisName]!.toStringAsFixed(1)}%', style: const TextStyle(color: kMuted, fontSize: 14)),
-    ]);
+    ],
+  );
+
+  Widget _labeledSelect(String lbl, String val, Map<String, String> items,
+      ValueChanged<String?> fn) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(lbl, style: const TextStyle(color: kText, fontSize: 12)),
+        const SizedBox(width: 5),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+              color: kBg,
+              border: Border.all(color: kMachine),
+              borderRadius: BorderRadius.circular(4)),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: val,
+              dropdownColor: kPanel,
+              style: const TextStyle(color: kMachine, fontSize: 12),
+              icon: const Icon(Icons.arrow_drop_down, color: kMachine, size: 18),
+              isDense: true,
+              items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+              onChanged: fn,
+            ),
+          ),
+        ),
+      ]);
+
+  Widget _kpiBox(String label, String value, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(6)),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(label, style: const TextStyle(color: kText, fontSize: 10)),
+      const SizedBox(height: 2),
+      Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
+    ]),
+  );
+
+  Widget _buildRow1() => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(flex: 2, child: _buildRobotTwin()),
+      const SizedBox(width: 10),
+      Expanded(child: _buildSensorsPanel()),
+    ],
+  );
+
+  Widget _buildRobotTwin() {
+    return _panel(
+      title: 'Gemelo Digital 2D  ·  Robot 3 Ejes (Vista Superior / Frontal)',
+      titleColor: kMachine,
+      height: 320,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(children: [
+              const Text('Vista Superior', style: TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: 180, height: 200,
+                child: CustomPaint(
+                  painter: _RobotTopViewPainter(
+                    baseAngle: _baseAngle, armExtend: _armExtend, gripperClosed: _gripperClosed,
+                    rly01: _act('RLY01').on, rly02: _act('RLY02').on, rly03: _act('RLY03').on,
+                  ),
+                ),
+              ),
+              Text('Base: ${_baseAngle.toStringAsFixed(0)}°', style: TextStyle(color: _act('RLY01').on || _act('RLY02').on ? kMachine : const Color(0xFF546E7A), fontSize: 10, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+          Container(width: 1, color: kBorder),
+          Expanded(
+            child: Column(children: [
+              const Text('Vista Frontal', style: TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: 160, height: 200,
+                child: CustomPaint(
+                  painter: _RobotFrontViewPainter(
+                    zPosition: _zPosition, armExtend: _armExtend, gripperClosed: _gripperClosed,
+                    rly05: _act('RLY05').on, rly06: _act('RLY06').on, rly07: _act('RLY07').on, rly08: _act('RLY08').on,
+                  ),
+                ),
+              ),
+              Text('Eje Z: ${(_zPosition * 100).toStringAsFixed(0)}%  Gripper: ${_gripperClosed ? 'CERRADO' : 'ABIERTO'}', style: TextStyle(color: _gripperClosed ? kGreen : const Color(0xFF546E7A), fontSize: 10, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _limitSwitchIndicator(String id) => Column(children: [
-    Container(width: 20, height: 20, decoration: BoxDecoration(color: _limitSwitches[id]! ? kGreen : kMuted, shape: BoxShape.circle)),
-    const SizedBox(height: 4), Text(id, style: const TextStyle(color: kText, fontSize: 10)),
-  ]);
+  Widget _buildSensorsPanel() => _panel(
+    title: 'Sensores · Encoders y Referencias',
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: _sensors.map((s) => _sensorRow(s)).toList(),
+    ),
+  );
 
-  Widget _gripperIndicator() => Column(children: [
-    GestureDetector(
-      onTap: (_mode == 'manual') ? () => _toggleGripper(!_gripper, manual: true) : null,
-      child: Container(
-        width: 40, height: 20, alignment: Alignment.center,
-        decoration: BoxDecoration(color: _gripper ? kGreen : kMuted, borderRadius: BorderRadius.circular(4)),
-        child: Text(_gripper ? 'ON' : 'OFF', style: const TextStyle(color: kBgDark, fontSize: 10, fontWeight: FontWeight.bold)),
+  Widget _sensorRow(SensorModel s) {
+    final color = s.active ? kGreen : const Color(0xFF333333);
+    return GestureDetector(
+      onTap: () => _toggleSensor(s.id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+            color: s.active ? kGreen.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.3),
+            border: Border.all(color: s.active ? kGreen.withValues(alpha: 0.4) : kBorder),
+            borderRadius: BorderRadius.circular(4)),
+        child: Row(children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 10, height: 10,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color, boxShadow: s.active ? [BoxShadow(color: color.withValues(alpha: 0.8), blurRadius: 8)] : null),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${s.id}: ${s.label}', style: TextStyle(color: s.active ? kGreen : kText, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(s.description, style: const TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
+                ],
+              )),
+          Text(s.active ? 'ON' : 'OFF', style: TextStyle(color: s.active ? kGreen : const Color(0xFF546E7A), fontSize: 10, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildRow2() => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(child: _buildActuatorsPanel()),
+      const SizedBox(width: 10),
+      Expanded(child: _buildActuatorsPanel2()),
+      const SizedBox(width: 10),
+      Expanded(child: _buildAuditPanel()),
+    ],
+  );
+
+  Widget _buildActuatorsPanel() => _panel(
+    title: 'Actuadores · Base y Brazo',
+    child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _actuators.sublist(0, 4).map(_actuatorRow).toList()),
+  );
+
+  Widget _buildActuatorsPanel2() => _panel(
+    title: 'Actuadores · Eje Z y Gripper',
+    child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _actuators.sublist(4).map(_actuatorRow).toList()),
+  );
+
+  Widget _actuatorRow(ActuatorModel a) => Container(
+    margin: const EdgeInsets.symmetric(vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+        color: a.on ? kMachine.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.3),
+        border: Border.all(color: a.on ? kMachine.withValues(alpha: 0.5) : kBorder),
+        borderRadius: BorderRadius.circular(4)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(child: Text(a.id, style: TextStyle(color: a.on ? kMachine : kText, fontSize: 12, fontWeight: FontWeight.bold))),
+        Transform.scale(
+          scale: 0.75,
+          child: Switch(value: a.on, onChanged: a.disabled ? null : (v) => _toggleActuator(a.id, v), activeThumbColor: Colors.white, activeTrackColor: kMachine, inactiveThumbColor: Colors.white, inactiveTrackColor: const Color(0xFF333333)),
+        ),
+      ]),
+      Text(a.description, style: const TextStyle(color: Color(0xFF546E7A), fontSize: 10)),
+    ]),
+  );
+
+  Widget _buildAuditPanel() => _panel(
+    title: 'Auditoría (Audit Trail) y Alertas',
+    child: Container(
+      height: 250,
+      decoration: BoxDecoration(color: kBg, border: Border.all(color: kBorder), borderRadius: BorderRadius.circular(4)),
+      padding: const EdgeInsets.all(8),
+      child: ListView.builder(
+        controller: _logScroll,
+        itemCount: _logs.length,
+        itemBuilder: (_, i) {
+          final l = _logs[i];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                  children: [
+                    TextSpan(text: '[${l.time}] ', style: const TextStyle(color: Color(0xFF546E7A))),
+                    TextSpan(text: '[${l.user}] - ', style: const TextStyle(color: kMachine)), // Usar color principal
+                    TextSpan(text: l.message, style: TextStyle(color: l.color)),
+                  ],
+                )),
+          );
+        },
       ),
     ),
-    const SizedBox(height: 4), const Text('Gripper', style: TextStyle(color: kText, fontSize: 10)),
-  ]);
-
-  Widget _buildCycleControls() => Column(children: [
-    Text('Piezas ciclo actual: $_piezas', style: const TextStyle(color: kText, fontSize: 16)),
-    const SizedBox(height: 16),
-    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      ElevatedButton.icon(icon: const Icon(Icons.home), label: const Text('Ir a HOME'), onPressed: _goToHome, style: ElevatedButton.styleFrom(backgroundColor: kAccent, foregroundColor: kText)),
-      ElevatedButton.icon(icon: Icon(_isCycleRunning ? Icons.stop : Icons.play_arrow), label: Text(_isCycleRunning ? 'DETENER CICLO' : 'INICIAR CICLO'), onPressed: () => _isCycleRunning ? setState(()=>_isCycleRunning = false) : _startCycle(), style: ElevatedButton.styleFrom(backgroundColor: _isCycleRunning ? kMuted : kGreen, foregroundColor: kBgDark)),
-      ElevatedButton.icon(icon: const Icon(Icons.error), label: const Text('PARO DE EMERGENCIA'), onPressed: _emergencyStop, style: ElevatedButton.styleFrom(backgroundColor: kRed, foregroundColor: kText)),
-    ]),
-  ]);
-
-  Widget _buildLogPanel() => _panel(
-    height: 400,
-    title: 'Consola de Eventos del Robot',
-    child: ListView.builder(
-      controller: _logScroll,
-      itemCount: _logs.length,
-      itemBuilder: (context, index) {
-        final log = _logs[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 4.0),
-          child: RichText(text: TextSpan(
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-            children: [ TextSpan(text: '[${log.time}] ', style: const TextStyle(color: kMuted)), TextSpan(text: log.message, style: TextStyle(color: log.color)) ]
-          )),
-        );
-      },
-    ),
   );
 
-  Widget _panel({required String title, required Widget child, double? height}) => Container(
-    height: height, padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: kPanel, borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(title, style: const TextStyle(color: kAccent, fontWeight: FontWeight.bold))),
-      const Divider(color: kBorder, height: 1), const SizedBox(height: 8), child,
-    ]),
-  );
+  Widget _panel({
+    required String title,
+    required Widget child,
+    double? height,
+    Color titleColor = kMachine, // Usar color principal por defecto
+  }) =>
+      Container(
+        height: height,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: kPanel,
+            border: Border.all(color: kBorder),
+            borderRadius: BorderRadius.circular(8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kBorder))),
+              child: Text(title, style: TextStyle(color: titleColor, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 8),
+            child,
+          ],
+        ),
+      );
+}
+
+class _RobotTopViewPainter extends CustomPainter {
+  final double baseAngle; final double armExtend; final bool gripperClosed;
+  final bool rly01, rly02, rly03;
+  _RobotTopViewPainter({ required this.baseAngle, required this.armExtend, required this.gripperClosed, required this.rly01, required this.rly02, required this.rly03 });
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2; final cy = size.height / 2; final rad = baseAngle * pi / 180;
+    canvas.drawCircle(Offset(cx, cy), 30, Paint()..color = (rly01 || rly02) ? kMachine.withValues(alpha: 0.3) : const Color(0xFF1A2233)..style = PaintingStyle.fill);
+    canvas.drawCircle(Offset(cx, cy), 30, Paint()..color = (rly01 || rly02) ? kMachine : const Color(0xFF334455)..style = PaintingStyle.stroke..strokeWidth = 2);
+    final tp = TextPainter(text: TextSpan(text: 'M1', style: TextStyle(color: kText.withValues(alpha: 0.6), fontSize: 10)), textDirection: TextDirection.ltr)..layout();
+    tp.paint(canvas, Offset(cx - 9, cy - 6));
+    final armLen = 30 + (armExtend * 50); final bx = cx + armLen * cos(rad); final by = cy + armLen * sin(rad);
+    canvas.drawLine(Offset(cx, cy), Offset(bx, by), Paint()..color = rly03 ? kMachine : const Color(0xFF334455)..strokeWidth = 6..strokeCap = StrokeCap.round);
+    canvas.drawCircle(Offset(bx, by), gripperClosed ? 6 : 10, Paint()..color = gripperClosed ? kGreen.withValues(alpha: 0.5) : const Color(0xFF1A2233)..style = PaintingStyle.fill);
+    canvas.drawCircle(Offset(bx, by), gripperClosed ? 6 : 10, Paint()..color = gripperClosed ? kGreen : const Color(0xFF334455)..style = PaintingStyle.stroke..strokeWidth = 2);
+    final ap = TextPainter(text: TextSpan(text: '${baseAngle.toStringAsFixed(0)}°', style: TextStyle(color: (rly01 || rly02) ? kMachine : kText.withValues(alpha: 0.3), fontSize: 9)), textDirection: TextDirection.ltr)..layout();
+    ap.paint(canvas, Offset(cx - 10, size.height - 18));
+  }
+  @override
+  bool shouldRepaint(covariant _RobotTopViewPainter old) => old.baseAngle != baseAngle || old.armExtend != armExtend || old.gripperClosed != gripperClosed;
+}
+
+class _RobotFrontViewPainter extends CustomPainter {
+  final double zPosition; final double armExtend; final bool gripperClosed;
+  final bool rly05, rly06, rly07, rly08;
+  _RobotFrontViewPainter({ required this.zPosition, required this.armExtend, required this.gripperClosed, required this.rly05, required this.rly06, required this.rly07, required this.rly08 });
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2; final colH = size.height - 30;
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(cx - 4, 10, 8, colH), const Radius.circular(4)), Paint()..color = const Color(0xFF334455)..style = PaintingStyle.fill);
+    final zY = 10 + zPosition * (colH - 30);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(cx - 16, zY, 32, 18), const Radius.circular(4)), Paint()..color = (rly05 || rly06) ? kMachine.withValues(alpha: 0.3) : const Color(0xFF1A2233)..style = PaintingStyle.fill);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(cx - 16, zY, 32, 18), const Radius.circular(4)), Paint()..color = (rly05 || rly06) ? kMachine : const Color(0xFF334455)..style = PaintingStyle.stroke..strokeWidth = 1.5);
+    final armEndX = cx + 20 + armExtend * 35;
+    canvas.drawLine(Offset(cx + 16, zY + 9), Offset(armEndX, zY + 9), Paint()..color = rly07 || rly08 ? kMachine : const Color(0xFF445566)..strokeWidth = 5..strokeCap = StrokeCap.round);
+    final gpW = gripperClosed ? 8.0 : 14.0;
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13), const Radius.circular(3)), Paint()..color = gripperClosed ? kGreen.withValues(alpha: 0.4) : const Color(0xFF1A2233)..style = PaintingStyle.fill);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(armEndX - 2, zY + 3, gpW, 13), const Radius.circular(3)), Paint()..color = gripperClosed ? kGreen : const Color(0xFF334455)..style = PaintingStyle.stroke..strokeWidth = 1.5);
+    final arrColor = rly06 ? kRed : rly05 ? kGreen : kText.withValues(alpha: 0.2);
+    canvas.drawLine(Offset(cx - 25, zY + 9), Offset(cx - 25, rly06 ? zY + 20 : rly05 ? zY - 10 : zY + 9), Paint()..color = arrColor..strokeWidth = 2..strokeCap = StrokeCap.round);
+    if (rly06 || rly05) {
+      final arrowY = rly06 ? zY + 20 : zY - 10; final arrowDir = rly06 ? 1 : -1;
+      canvas.drawPath(Path()..moveTo(cx - 25, arrowY)..lineTo(cx - 29, arrowY - arrowDir * 6.0)..lineTo(cx - 21, arrowY - arrowDir * 6.0)..close(), Paint()..color = arrColor..style = PaintingStyle.fill);
+    }
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(cx - 20, size.height - 18, 40, 10), const Radius.circular(4)), Paint()..color = const Color(0xFF334455)..style = PaintingStyle.fill);
+    final tp = TextPainter(text: TextSpan(text: 'M3', style: TextStyle(color: kText.withOpacity(0.4), fontSize: 8)), textDirection: TextDirection.ltr)..layout();
+    tp.paint(canvas, Offset(cx - 5, zY + 5));
+  }
+  @override
+  bool shouldRepaint(covariant _RobotFrontViewPainter old) => old.zPosition != zPosition || old.gripperClosed != gripperClosed || old.armExtend != armExtend;
 }
