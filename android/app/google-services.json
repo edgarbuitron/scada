@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "926265125632",
+    "project_id": "project-react-ceea5",
+    "storage_bucket": "project-react-ceea5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:926265125632:android:039f96d1773c067730e1e5",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "926265125632-l6ku2tlpuqfk99aa5ob5c99os6b7cqo0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJZ-6f5CyQoX18SzwDbuasvJZUa7Tecao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "926265125632-l6ku2tlpuqfk99aa5ob5c99os6b7cqo0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "926265125632-8inrdhf16h8eglflfjgubghiic0r4u5o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.myapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

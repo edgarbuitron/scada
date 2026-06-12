@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "scada" "\0"
+            VALUE "FileDescription", "analytics_dashboard" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "scada" "\0"
+            VALUE "InternalName", "analytics_dashboard" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "scada.exe" "\0"
-            VALUE "ProductName", "scada" "\0"
+            VALUE "OriginalFilename", "analytics_dashboard.exe" "\0"
+            VALUE "ProductName", "analytics_dashboard" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -3,9 +3,20 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  cloud_firestore
+  connectivity_plus
+  file_selector_windows
+  firebase_auth
+  firebase_core
+  printing
+  screen_retriever_windows
+  share_plus
+  url_launcher_windows
+  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

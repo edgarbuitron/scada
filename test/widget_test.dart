@@ -1,26 +1,20 @@
-import '../app_scada/lib/main_prensado.dart';
+import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-// 👇 IMPORTA TU APP REAL
-
+// ignore: unused_import
+import 'package:analytics_dashboard/main.dart';
 
 void main() {
-  testWidgets('SCADA carga correctamente', (WidgetTester tester) async {
-    
-    // 👇 AQUÍ ESTABA EL ERROR (Myapp → ScadaMasterApp)
-    await tester.pumpWidget(const ScadaPrensadoScreen());
+  testWidgets('Analytics dashboard loads correctly',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const AnalyticsApp() as Widget);
 
-    // Verifica que el dashboard inicial se muestre
-    expect(find.text('Dashboard SCADA'), findsOneWidget);
-
-    // Verifica que existe el menú lateral
-    expect(find.text('Neumático'), findsOneWidget);
-
-    // Simula click en Centro Neumático
-    await tester.tap(find.text('Neumático'));
-    await tester.pump();
-
-    // Verifica que cambió la vista
-    expect(find.text('SCADA NEUMÁTICO FUNCIONANDO'), findsOneWidget);
+    expect(find.text('Analytics / Reportes'), findsOneWidget);
+    expect(find.text('Generar'), findsOneWidget);
+    expect(find.text('Producción'), findsWidgets);
+    expect(find.text('Fallas'), findsWidgets);
   });
+}
+
+class AnalyticsApp {
+  const AnalyticsApp();
 }
