@@ -9,7 +9,7 @@ class LLavesService {
     "LLAVE_FALSA_1",
     "LLAVE_FALSA_1",
     "LLAVE_FALSA_1",
-    "LLAVE_FALSA_1,
+    "LLAVE_FALSA_1",
   ];
 
   /// Obtiene la configuración desde Firestore y retorna una llave aleatoria del pool.
